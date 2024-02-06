@@ -5,7 +5,7 @@
 # Docker container for Snitch development.
 
 # 1. Stage
-FROM ubuntu:18.04 AS builder
+FROM ubuntu:20.04 AS builder
 ARG CMAKE_VERSION=3.19.4
 ARG PYTHON_VERSION=3.9.12
 # Run dpkg without interactive dialogue
@@ -37,6 +37,17 @@ RUN apt-get update && apt-get install -y \
         libc6-dev \
         libbz2-dev \
         libffi-dev
+# Required to build verilator
+RUN apt-get update && apt-get install -y \
+        help2man \
+        perl \
+        flex \
+        autoconf \
+        bison \
+        ccache \
+        libgoogle-perftools-dev \
+        numactl \
+        perl-doc
 
 # Install Python
 RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz
@@ -74,10 +85,19 @@ RUN rustup override set 1.63.0
 RUN git clone https://github.com/pulp-platform/banshee.git /tmp/banshee --recurse-submodules
 RUN cargo install --path /tmp/banshee
 
+# Build verilator
+RUN git clone https://github.com/verilator/verilator && \
+    cd verilator && \
+    git checkout stable && \
+    autoconf && \
+    ./configure && \
+    make -j `nproc` && \
+    make install
+
 # 2. Stage
-FROM ubuntu:18.04 AS snitch_cluster
+FROM ubuntu:20.04 AS snitch_cluster
 ARG SNITCH_LLVM_VERSION=latest
-ARG VERIBLE_VERSION=0.0-776-g09e0b87
+ARG VERIBLE_VERSION=0.0-3534-g99d1aa7c
 ARG VERILATOR_VERSION=4.100
 
 LABEL version="0.1"
@@ -106,12 +126,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
 # Install Verilator
-RUN echo 'deb http://download.opensuse.org/repositories/home:/phiwag:/edatools/xUbuntu_18.04/ /' | tee /etc/apt/sources.list.d/home:phiwag:edatools.list && \
-    curl -fsSL https://download.opensuse.org/repositories/home:phiwag:edatools/xUbuntu_18.04/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_phiwag_edatools.gpg > /dev/null && \
-    apt-get update && apt-get install -y verilator-${VERILATOR_VERSION} && \
-    apt-get clean ; \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
-ENV VLT_ROOT "/usr/share/verilator"
+# RUN echo 'deb http://download.opensuse.org/repositories/home:/phiwag:/edatools/xUbuntu_20.04/ /' | tee /etc/apt/sources.list.d/home:phiwag:edatools.list && \
+#     curl -fsSL https://download.opensuse.org/repositories/home:phiwag:edatools/xUbuntu_20.04/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_phiwag_edatools.gpg > /dev/null && \
+#     apt-get update && apt-get install -y verilator-${VERILATOR_VERSION} && \
+#     apt-get clean ; \
+#     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
 # Get the precompiled LLVM toolchain
 RUN latest_tag=`curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/pulp-platform/llvm-project/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'` && \
@@ -125,9 +144,9 @@ RUN latest_tag=`curl -s -H "Accept: application/vnd.github.v3+json" https://api.
 ENV LLVM_BINROOT "/tools/riscv-llvm/bin"
 
 # Install Verible
-RUN wget https://github.com/google/verible/releases/download/v${VERIBLE_VERSION}/verible-v${VERIBLE_VERSION}-Ubuntu-18.04-bionic-x86_64.tar.gz && \
-    tar -x -f verible-v${VERIBLE_VERSION}-Ubuntu-18.04-bionic-x86_64.tar.gz --strip-components=1 -C . && \
-    rm -rf verible-v${VERIBLE_VERSION}-Ubuntu-18.04-bionic-x86_64.tar.gz
+RUN wget https://github.com/google/verible/releases/download/v${VERIBLE_VERSION}/verible-v${VERIBLE_VERSION}-linux-static-x86_64.tar.gz && \
+    tar -x -f verible-v${VERIBLE_VERSION}-linux-static-x86_64.tar.gz --strip-components=1 -C . && \
+    rm -rf verible-v${VERIBLE_VERSION}-linux-static-x86_64.tar.gz
 ENV PATH "/tools/bin:${PATH}"
 
 # Install git>=2.18, required by Github checkout action to recurse submodules
@@ -136,10 +155,22 @@ RUN apt-get update && apt-get install software-properties-common -y && \
     apt-get update && \
     apt-get install git -y
 
+# Download and build spike, requires riscv toolchain to be available
+ENV SPIKE_ROOT "/tools/riscv-isa-sim"
+RUN git clone https://github.com/riscv-software-src/riscv-isa-sim.git && \
+    mkdir "riscv-isa-sim/build" && \
+    cd "./riscv-isa-sim/build" && \
+    ../configure --prefix="${LLVM_BINROOT}" && \
+    make -j${nproc} && \
+    find "${SPIKE_ROOT}/build" -perm /a+x -type f -exec cp {} /tools/bin \;
+
 # Copy artifacts from stage 1.
 COPY --from=builder /root/.cargo/bin/bender bin/
 COPY --from=builder /root/.cargo/bin/banshee bin/
 COPY --from=builder /opt/python /opt/python
+COPY --from=builder /usr/share/verilator /usr/share/verilator
+
+ENV VLT_ROOT "/usr/share/verilator"
 
 # Create and activate virtual environment
 ENV VIRTUAL_ENV "/root/.venvs/snitch_cluster"
