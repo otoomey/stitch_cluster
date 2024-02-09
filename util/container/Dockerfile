@@ -59,8 +59,8 @@ RUN cd Python-${PYTHON_VERSION} && \
 # Build Rust tools
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH "/root/.cargo/bin:${PATH}"
-RUN rustup install 1.70.0
-RUN rustup override set 1.70.0
+RUN rustup install 1.74.0
+RUN rustup override set 1.74.0
 
 # Install Bender
 RUN cargo install bender --version 0.27.1
@@ -84,15 +84,6 @@ RUN rustup install 1.63.0
 RUN rustup override set 1.63.0
 RUN git clone https://github.com/pulp-platform/banshee.git /tmp/banshee --recurse-submodules
 RUN cargo install --path /tmp/banshee
-
-# Build verilator
-RUN git clone https://github.com/verilator/verilator && \
-    cd verilator && \
-    git checkout stable && \
-    autoconf && \
-    ./configure && \
-    make -j `nproc` && \
-    make install
 
 # 2. Stage
 FROM ubuntu:20.04 AS snitch_cluster
@@ -126,11 +117,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
 # Install Verilator
-# RUN echo 'deb http://download.opensuse.org/repositories/home:/phiwag:/edatools/xUbuntu_20.04/ /' | tee /etc/apt/sources.list.d/home:phiwag:edatools.list && \
-#     curl -fsSL https://download.opensuse.org/repositories/home:phiwag:edatools/xUbuntu_20.04/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_phiwag_edatools.gpg > /dev/null && \
-#     apt-get update && apt-get install -y verilator-${VERILATOR_VERSION} && \
-#     apt-get clean ; \
-#     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
+RUN echo 'deb http://download.opensuse.org/repositories/home:/phiwag:/edatools/xUbuntu_20.04/ /' | tee /etc/apt/sources.list.d/home:phiwag:edatools.list && \
+    curl -fsSL https://download.opensuse.org/repositories/home:phiwag:edatools/xUbuntu_20.04/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_phiwag_edatools.gpg > /dev/null && \
+    apt-get update && apt-get install -y verilator-${VERILATOR_VERSION} && \
+    apt-get clean ; \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
+ENV VLT_ROOT "/usr/share/verilator"
 
 # Get the precompiled LLVM toolchain
 RUN latest_tag=`curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/pulp-platform/llvm-project/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'` && \
@@ -155,27 +147,27 @@ RUN apt-get update && apt-get install software-properties-common -y && \
     apt-get update && \
     apt-get install git -y
 
+# Copy artifacts from stage 1.
+COPY --from=builder /root/.cargo/bin/bender bin/
+COPY --from=builder /root/.cargo/bin/banshee bin/
+COPY --from=builder /opt/python /opt/python
+
 # Download and build spike, requires riscv toolchain to be available
+# This also means we are less likely to run out of RAM when compiling
 ENV SPIKE_ROOT "/tools/riscv-isa-sim"
 RUN git clone https://github.com/riscv-software-src/riscv-isa-sim.git && \
     mkdir "riscv-isa-sim/build" && \
     cd "./riscv-isa-sim/build" && \
     ../configure --prefix="${LLVM_BINROOT}" && \
-    make -j${nproc} && \
-    find "${SPIKE_ROOT}/build" -perm /a+x -type f -exec cp {} /tools/bin \;
-
-# Copy artifacts from stage 1.
-COPY --from=builder /root/.cargo/bin/bender bin/
-COPY --from=builder /root/.cargo/bin/banshee bin/
-COPY --from=builder /opt/python /opt/python
-COPY --from=builder /usr/share/verilator /usr/share/verilator
-
-ENV VLT_ROOT "/usr/share/verilator"
+    make -j2
 
 # Create and activate virtual environment
 ENV VIRTUAL_ENV "/root/.venvs/snitch_cluster"
 RUN /opt/python/bin/python3 -m venv ${VIRTUAL_ENV}
+
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+ENV PATH="${SPIKE_ROOT}/build:${PATH}"
+
 # Install Python requirements
 COPY python-requirements.txt /tmp/python-requirements.txt
 COPY docs/requirements.txt /tmp/docs/requirements.txt

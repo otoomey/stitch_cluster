@@ -1,0 +1,151 @@
+snitch_cluster
+├── i_cut_ext_wide_out (axi_cut) // Optionally decouple the external wide AXI master port.
+├── i_cut_ext_wide_in (axi_cut)
+├── i_axi_dma_xbar (axi_xbar)
+├── i_axi_zeromem (axi_zero_mem)
+    ├── i_axi_to_zeromem (axi_to_mem)
+├── i_axi_to_mem_dma (axi_to_mem_interleaved)
+├── i_dma_interconnect (snitch_tcdm_interconnect)
+    ├── i_stream_xbar (stream_xbar) // if (Topology == snitch_pkg::LogarithmicInterconnect)
+    ├── i_stream_omega_net (stream_omega_net) // if (Topology == snitch_pkg::OmegaNet)
+    ├── i_shift_reg (shift_reg) [NumInp] // Response Side
+├── i_tcdm_mux (mem_wide_narrow_mux) [NrSuperBanks]
+├── i_data_mem (tc_sram_impl) [NrSuperBanks * BanksPerSuperBank]
+├── i_amo_shim  (snitch_amo_shim) [NrSuperBanks * BanksPerSuperBank] // TODO(zarubaf): Share atomic units between mutltiple cuts
+    ├── i_amo_alu (snitch_amo_alu)
+├── i_sram_pipe (shift_reg) [NrSuperBanks * BanksPerSuperBank]
+├── i_tcdm_interconnect (snitch_tcdm_interconnect)
+    ├── i_stream_xbar (stream_xbar) // if (Topology == snitch_pkg::LogarithmicInterconnect)
+    ├── i_stream_omega_net (stream_omega_net) // if (Topology == snitch_pkg::OmegaNet)
+    ├── i_shift_reg (shift_reg) [NumInp] // Response Side
+├── i_sync_debug (sync) [NrCores]
+├── i_sync_meip (sync) [NrCores]
+├── i_sync_mtip (sync) [NrCores]
+├── i_sync_msip (sync) [NrCores]
+├── i_snitch_cc (snitch_cc) [NrCores]
+    /* Snitch Core stuff*/
+    ├── i_snitch (snitch)
+        ├── i_snitch_l0_tlb_inst (snitch_l0_tlb) // L0 ITLB
+        ├── i_snitch_regfile (snitch_regfile)
+        ├── i_snitch_lsu (snitch_lsu)
+            ├── i_fifo_laq (fifo_v3) // Load Address Queue (LAQ)
+            ├── i_fifo_mem (fifo_v3) // For each memory transaction save whether this was a load or a store. We need this information to suppress stores.
+    ├── i_reqrsp_iso (reqrsp_iso)
+        ├── i_isochronous_spill_register_q (isochronous_spill_register)
+        ├── i_isochronous_spill_register_p (isochronous_spill_register)
+    ├── i_spill_register_acc_demux_req (isochronous_spill_register) // Cut off-loading request path
+    ├── i_spill_register_acc_demux_resp (isochronous_spill_register) // Cut off-loading response path
+    ├── i_stream_demux_offload (stream_demux) // Accelerator Demux Port
+    ├── i_stream_arbiter_offload (stream_arbiter) // To shared muldiv
+    /* DMA unit stuff *
+    ├── i_axi_dma_tc_snitch_fe (axi_dma_tc_snitch_fe)
+        ├── i_axi_dma_backend (axi_dma_backend) // Backend Instanciation
+            ├── i_burst_request_fifo (fifo_v3) // buffer the input requests in a fifo
+            ├── i_axi_dma_burst_reshaper (axi_dma_burst_reshaper)
+            ├── i_axi_dma_data_mover (axi_dma_data_mover)
+                ├── i_fifo_ar_emitter (fifo_v3) // instanciate a fifo to buffer the address read requests
+                ├── i_fifo_aw_emitter (fifo_v3) // instantiate a fifo to buffer the address write requests
+                ├── i_fifo_r_emitter (fifo_v3) // instantiate a fifo to buffer the read requests
+                ├── i_fifo_w_emitter (fifo_v3) // instanciate a fifo to buffer the write requests
+                ├── i_axi_dma_data_path (axi_dma_data_path)
+                    ├── i_fifo_buffer (fifo_v3) [StrbWidth] // Buffer - implemented as fifo
+                ├── i_last_transaction_queue (fifo_v3) // ID control
+        ├── i_axi_dma_twod_ext (axi_dma_twod_ext) // 2D Extension
+            ├── i_twod_req_fifo_v3 (fifo_v3)
+        ├── i_fifo_v3_last_twod_buffer (fifo_v3) // Buffer twod last
+        ├── i_axi_dma_perf_counters (axi_dma_perf_counters) // Performance counters
+            ├── i_popcount (popcount)
+        ├── i_spill_register_dma_resp (spill_register) // Spill register for response channel
+    /* Fp Unit stuff */
+    ├── i_snitch_fp_ss (snitch_fp_ss)
+        ├── i_snitch_fpu_sequencer (snitch_sequencer) // FPU Sequencer
+            ├── seq_cfg_buffer (fifo_v3)
+        ├── i_spill_register_acc (spill_register) // Optional spill-register
+        ├── i_ff_regfile (snitch_regfile)
+        ├── i_fpu (snitch_fpu) // Floating Point Unit
+            ├── i_spill_register_fpu_in (spill_register)
+            ├── i_fpu (fpnew_top)
+            ├── i_spill_register_fpu_out (spill_register)
+        ├── i_snitch_lsu (snitch_lsu) // Load/Store Unit
+    ├── i_reqrsp_mux (reqrsp_mux)
+    ├── i_reqrsp_demux (reqrsp_demux) // Decide whether to go to SoC or TCDM
+    ├── i_addr_decode_napot (addr_decode_napot)
+    ├── i_reqrsp_to_tcdm (reqrsp_to_tcdm)
+    /* Stream register stuff */
+    ├── i_stream_to_mem (stream_to_mem) // if (Xssr)
+    ├── i_snitch_ssr_streamer (stream_to_mem)
+        ├── i_switch (snitch_ssr_switch)
+        ├── i_ssr (snitch_ssr) [NumSsrs]
+            ├── i_fifo (fifo_v3)
+            ├── i_addr_gen (snitch_ssr_addr_gen)
+                ├── i_snitch_ssr_indirector (snitch_ssr_indirector) // Encapsulated indirection datapath
+                    ├── i_isect_counter (counter) // Counter for number of elements emitted by intersector
+                    ├── i_spill_slv_idx (spill_register) // Cut timing paths from intersector slave port
+                    ├── i_done_fifo (stream_fifo) // Track done and decouple address emission from index write
+                    ├── i_mem_inflight_counter (snitch_ssr_credit_counter) // Count inflight index words
+                    ├── i_idx_fifo (fifo_v3) // Index FIFO: stores full unserialized words.
+                    ├── i_credit_counter (snitch_ssr_credit_counter) // Index counter: keeps track of the number of memory requests in flight
+                ├── i_out_spill (spill_register) // Generate spill register at output to cut timing paths if desired.
+            ├── i_tcdm_mux (tcdm_mux) // if (Cfg.Indirection)
+            ├── i_fifo_zero (fifo_v3) // if (Cfg.IsectMaster)
+            ├── i_snitch_ssr_credit_counter (snitch_ssr_credit_counter) // Credit counter that keeps track of the number of memory requests issued
+        ├── i_snitch_ssr_intersector (snitch_ssr_intersector) // if (IsectCfg.NumMaster0 != 0)
+    ├── i_tcdm_mux (tcdm_mux)
+├── i_snitch_hive (snitch_hive) [NrHives]
+    ├── i_snitch_icache (snitch_icache)
+        ├── i_snitch_icache_l0 (snitch_icache_l0) [NR_FETCH_PORTS]
+            ├── i_onehot_hit_early (cc_onehot) // Check whether we had an early multi-hit 
+            ├── i_lzc_branch (lzc) // Find first taken branch
+        ├── i_spill_register_prefetch_req (isochronous_spill_register) [NR_FETCH_PORTS]
+        ├── i_spill_register_prefetch_resp (isochronous_spill_register) [NR_FETCH_PORTS]
+        ├── i_l0_to_bypass (l0_to_bypass)
+            ├── i_stream_arbiter (stream_arbiter)
+            ├── rsp_fifo (fifo_v3)
+            ├── i_onehot_to_bin (onehot_to_bin)
+            ├── i_stream_mux_miss_refill (stream_demux)
+        ├── i_spill_register_bypass_req (isochronous_spill_register)
+        ├── i_spill_register_bypass_resp (isochronous_spill_register)
+        ├── i_stream_arbiter (stream_arbiter) /// Arbitrate cache port
+        ├── i_lookup (snitch_icache_lookup)
+            ├── i_tag (tc_sram_impl) [CFG.SET_COUNT] // Instantiate the RAM sets.
+            ├── i_data (tc_sram_impl) [CFG.SET_COUNT] // Instantiate the RAM sets.
+            ├── i_lzc (lzc)
+            ├── i_rsp_buffer (fall_through_register) // if (CFG.BUFFER_LOOKUP)
+        ├── i_handler (snitch_icache_handler) // The miss handler module deals with the result of the lookup.
+            ├── i_lzc_free (lzc) // Determine the first available entry in the pending table, if any is free.
+            ├── i_lzc_pending (lzc) // Determine if the address of the incoming request coincides with any of the entries in the pending table.
+            ├── i_evict_lfsr (snitch_icache_lfsr) // The cache line eviction LFSR is responsible for picking a cache line for replacement at random
+                ├── i_lo snitch_icache_lfsr // if (N > 32)
+                ├── i_hi snitch_icache_lfsr // if (N > 32)
+        ├── i_stream_arbiter_miss_refill (stream_arbiter) // Arbitrate between bypass and cache-refills
+        ├── i_stream_demux_miss_refill (stream_demux) // Response path muxing
+        ├── i_refill (snitch_icache_refill) // Instantiate the cache refill module which emits AXI transactions.
+            ├── i_fifo_id_queue (fifo_v3)
+            ├── i_fifo_addr_offset (fifo_v3) // if (CFG.LINE_WIDTH < CFG.FILL_DW)
+    ├── i_stream_arbiter (stream_arbiter) /// Multiplex translation requests
+    ├── i_snitch_ptw (snitch_ptw)
+    ├── i_reqrsp_iso (reqrsp_iso)
+        ├── i_isochronous_spill_register_q (isochronous_spill_register)
+        ├── i_isochronous_spill_register_p (isochronous_spill_register)
+    ├── i_stream_arbiter (stream_arbiter) // if (CoreCount > 1)
+    ├── i_stream_demux (stream_demux)
+    ├── i_spill_register_muldiv (spill_register)
+    ├── i_snitch_shared_muldiv (snitch_shared_muldiv)
+        ├── i_multiplier (snitch_shared_muldiv_multiplier)
+        ├── i_div (snitch_shared_muldiv_serdiv)
+            ├── i_lzc_a (lzc) // count leading zeros
+            ├── i_lzc_b (lzc) // count leading zeros
+        ├── i_stream_arbiter (stream_arbiter)
+├── i_reqrsp_mux_ptw (reqrsp_mux)
+├── i_reqrsp_to_axi_ptw (reqrsp_mux)
+├── i_snitch_barrier (snitch_barrier)
+├── i_reqrsp_mux_core (reqrsp_mux)
+├── i_reqrsp_to_axi_core (reqrsp_to_axi)
+├── i_cluster_xbar (axi_xbar)
+├── i_cut_ext_narrow_slv (axi_cut) // Optionally decouple the external narrow AXI slave port.
+├── i_axi_to_tcdm (axi_to_tcdm) // Add an adapter that allows access from AXI to the TCDM.
+├── i_axi_to_reg (axi_to_reg) 
+├── i_snitch_cluster_peripheral (snitch_cluster_peripheral)
+├── i_cut_ext_narrow_mst (axi_cut) // Optionally decouple the external narrow AXI master ports.
+├── i_popcount_req (popcount) // TCDM event counters
+├── i_popcount_con (popcount) // TCDM event counters
