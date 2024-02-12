@@ -91,6 +91,7 @@ snitch_cluster
             ├── i_snitch_ssr_credit_counter (snitch_ssr_credit_counter) // Credit counter that keeps track of the number of memory requests issued
         ├── i_snitch_ssr_intersector (snitch_ssr_intersector) // if (IsectCfg.NumMaster0 != 0)
     ├── i_tcdm_mux (tcdm_mux)
+/* icache bits */
 ├── i_snitch_hive (snitch_hive) [NrHives]
     ├── i_snitch_icache (snitch_icache)
         ├── i_snitch_icache_l0 (snitch_icache_l0) [NR_FETCH_PORTS]
@@ -146,6 +147,8 @@ snitch_cluster
 ├── i_axi_to_tcdm (axi_to_tcdm) // Add an adapter that allows access from AXI to the TCDM.
 ├── i_axi_to_reg (axi_to_reg) 
 ├── i_snitch_cluster_peripheral (snitch_cluster_peripheral)
+    ├── i_snitch_cluster_peripheral_reg_top (snitch_cluster_peripheral_reg_top)
+        ├── prim_subreg [532]
 ├── i_cut_ext_narrow_mst (axi_cut) // Optionally decouple the external narrow AXI master ports.
 ├── i_popcount_req (popcount) // TCDM event counters
 ├── i_popcount_con (popcount) // TCDM event counters
