@@ -7,40 +7,42 @@
 
 /// Description: Filters FPU repetition instructions
 module stitch_sequencer import snitch_pkg::*; #(
-    parameter int unsigned AddrWidth = 0,
-    parameter int unsigned DataWidth = 0,
-    parameter int unsigned Depth = 16,
-    parameter acc_addr_e DstAddr = FP_SS,
-    /// Derived parameter *Do not override*
-    parameter type addr_t = logic [AddrWidth-1:0],
-    parameter type data_t = logic [DataWidth-1:0],
-    parameter int unsigned DepthBits = $clog2(Depth)
+  parameter int unsigned AddrWidth = 0,
+  parameter int unsigned DataWidth = 0,
+  parameter int unsigned Depth = 16,
+  parameter acc_addr_e DstAddr = FP_SS,
+  /// Derived parameter *Do not override*
+  parameter type addr_t = logic [AddrWidth-1:0],
+  parameter type data_t = logic [DataWidth-1:0],
+  parameter int unsigned DepthBits = $clog2(Depth)
 ) (
-    input  logic                             clk_i,
-    input  logic                             rst_i,
-    // pragma translate_off
-    output fpu_sequencer_trace_port_t        trace_port_o,
-    // pragma translate_on
-    input  acc_addr_e                        inp_qaddr_i,
-    input  logic                      [ 4:0] inp_qid_i,
-    input  logic                      [31:0] inp_qdata_op_i,  // RISC-V instruction
-    input  data_t                            inp_qdata_arga_i,
-    input  data_t                            inp_qdata_argb_i,
-    input  addr_t                            inp_qdata_argc_i,
-    input  logic                             inp_qvalid_i,
-    output logic                             inp_qready_o,
-    output acc_addr_e                        oup_qaddr_o,
-    output logic                      [ 4:0] oup_qid_o,
-    output logic                      [31:0] oup_qdata_op_o,  // RISC-V instruction
-    output data_t                            oup_qdata_arga_o,
-    output data_t                            oup_qdata_argb_o,
-    output addr_t                            oup_qdata_argc_o,
-    output logic                             oup_qvalid_o,
-    input  logic                             oup_qready_i
-    // SSR stream control interface
-    // input  logic                             streamctl_done_i,
-    // input  logic                             streamctl_valid_i,
-    // output logic                             streamctl_ready_o
+  input  logic                             clk_i,
+  input  logic                             rst_i,
+  input  logic [31:0]                      fpu_id_i,
+  input  logic                             add_fpu_id_i,
+  // pragma translate_off
+  output fpu_sequencer_trace_port_t        trace_port_o,
+  // pragma translate_on
+  input  acc_addr_e                        inp_qaddr_i,
+  input  logic                      [ 4:0] inp_qid_i,
+  input  logic                      [31:0] inp_qdata_op_i,  // RISC-V instruction
+  input  data_t                            inp_qdata_arga_i,
+  input  data_t                            inp_qdata_argb_i,
+  input  addr_t                            inp_qdata_argc_i,
+  input  logic                             inp_qvalid_i,
+  output logic                             inp_qready_o,
+  output acc_addr_e                        oup_qaddr_o,
+  output logic                      [ 4:0] oup_qid_o,
+  output logic                      [31:0] oup_qdata_op_o,  // RISC-V instruction
+  output data_t                            oup_qdata_arga_o,
+  output data_t                            oup_qdata_argb_o,
+  output addr_t                            oup_qdata_argc_o,
+  output logic                             oup_qvalid_o,
+  input  logic                             oup_qready_i
+  // SSR stream control interface
+  // input  logic                             streamctl_done_i,
+  // input  logic                             streamctl_valid_i,
+  // output logic                             streamctl_ready_o
 );
   localparam int RptBits = 16;
 
@@ -92,6 +94,7 @@ module stitch_sequencer import snitch_pkg::*; #(
   logic rb_full;
   logic rb_empty;
   logic rb_contains_instructions, rb_contains_no_instructions;
+  logic rd_is_int_reg, rs1_is_int_reg;
 
   always_comb begin : ringbuffer
     mem_d = mem_q;
@@ -112,6 +115,7 @@ module stitch_sequencer import snitch_pkg::*; #(
   logic [RptBits-1:0] rpt_cnt_d, rpt_cnt_q;
   logic [DepthBits-1:0] inst_cnt_d, inst_cnt_q;
   logic [2:0] stagger_cnt_q, stagger_cnt_d;
+  logic [5:0] stagger_cnt_offset_q;
 
   `FFAR(rd_pointer_q, rd_pointer_d, '0, clk_i, rst_i)
   `FFAR(wr_pointer_q, wr_pointer_d, '0, clk_i, rst_i)
@@ -204,10 +208,11 @@ module stitch_sequencer import snitch_pkg::*; #(
   always_comb begin
     seq_qdata_op   = rb_rd_data.qdata_op;
     seq_qdata_argc = rb_rd_data.qdata_argc;
-    if (curr_cfg.stagger_mask[0]) seq_qdata_op[11:7] += stagger_cnt_q;
-    if (curr_cfg.stagger_mask[1]) seq_qdata_op[19:15] += stagger_cnt_q;
-    if (curr_cfg.stagger_mask[2]) seq_qdata_op[24:20] += stagger_cnt_q;
-    if (curr_cfg.stagger_mask[3]) seq_qdata_op[31:27] += stagger_cnt_q;
+    stagger_cnt_offset_q = stagger_cnt_q + fpu_id_i[5:0];
+    if (curr_cfg.stagger_mask[0]) seq_qdata_op[11:7] += rd_is_int_reg ? stagger_cnt_offset_q : stagger_cnt_q; // rd
+    if (curr_cfg.stagger_mask[1]) seq_qdata_op[19:15] += rs1_is_int_reg ? stagger_cnt_offset_q : stagger_cnt_q; // rs1
+    if (curr_cfg.stagger_mask[2]) seq_qdata_op[24:20] += stagger_cnt_q; // rs2
+    if (curr_cfg.stagger_mask[3]) seq_qdata_op[31:27] += stagger_cnt_q; // rs3
   end
   /* verilator lint_on WIDTH */
 
@@ -257,6 +262,8 @@ module stitch_sequencer import snitch_pkg::*; #(
     core_rb_valid = '0;
     core_rpt_valid = '0;
     core_direct_valid = '0;
+    rd_is_int_reg = 1'b0;
+    rs1_is_int_reg = 1'b0;
 
     inp_qready_o = '0;
 
@@ -272,8 +279,8 @@ module stitch_sequencer import snitch_pkg::*; #(
       // pushed into the direct branch where they block
 
       // float to int
-      riscv_instr::FLE_S,
       riscv_instr::FLT_S,
+      riscv_instr::FLE_S,
       riscv_instr::FEQ_S,
       riscv_instr::FCLASS_S,
       riscv_instr::FCVT_W_S,
@@ -365,7 +372,11 @@ module stitch_sequencer import snitch_pkg::*; #(
       riscv_instr::VFCLASS_B,
       riscv_instr::VFMV_X_B,
       riscv_instr::VFCVT_X_B,
-      riscv_instr::VFCVT_XU_B,
+      riscv_instr::VFCVT_XU_B: begin
+        inp_qready_o = core_direct_ready;
+        core_direct_valid = inp_qvalid_i;
+        rd_is_int_reg = 1'b1;
+      end
 
       // int to float
       riscv_instr::FMV_W_X,
@@ -388,10 +399,23 @@ module stitch_sequencer import snitch_pkg::*; #(
       riscv_instr::FCVT_B_WU,
       riscv_instr::VFMV_B_X,
       riscv_instr::VFCVT_B_X,
-      riscv_instr::VFCVT_B_XU,
+      riscv_instr::VFCVT_B_XU: begin
+        inp_qready_o = core_direct_ready;
+        core_direct_valid = inp_qvalid_i;
+        rs1_is_int_reg = add_fpu_id_i;
+      end
 
-      riscv_instr::IMV_X_W,
-      riscv_instr::IMV_W_X,
+      riscv_instr::IMV_X_W: begin
+        inp_qready_o = core_direct_ready;
+        core_direct_valid = inp_qvalid_i;
+        rd_is_int_reg = add_fpu_id_i;
+      end
+
+      riscv_instr::IMV_W_X: begin
+        inp_qready_o = core_direct_ready;
+        core_direct_valid = inp_qvalid_i;
+        rs1_is_int_reg = add_fpu_id_i;
+      end
       // CSR accesses
       riscv_instr::CSRRW,
       riscv_instr::CSRRS,
