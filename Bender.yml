@@ -223,6 +223,14 @@ sources:
       # Level 2
       - hw/snitch_ipu/src/snitch_int_ss.sv
 
+  # stitch_fpu
+  - files:
+      # Level 0
+      - hw/stitch-fpu/src/stitch_fp_ss.sv
+      # Level 1
+      - hw/stitch-fpu/src/stitch_sequencer.sv
+      # Level 2
+      - hw/stitch-fpu/src/stitch_fpu.sv
   # snitch_ssr
   - files:
       # Level 0
