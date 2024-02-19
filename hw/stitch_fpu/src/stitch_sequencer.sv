@@ -40,9 +40,6 @@ module stitch_sequencer import snitch_pkg::*; #(
   output logic                             oup_qvalid_o,
   input  logic                             oup_qready_i
   // SSR stream control interface
-  // input  logic                             streamctl_done_i,
-  // input  logic                             streamctl_valid_i,
-  // output logic                             streamctl_ready_o
 );
   localparam int RptBits = 16;
 
@@ -182,6 +179,7 @@ module stitch_sequencer import snitch_pkg::*; #(
           inst_cnt_d = inst_last ? 0 : inst_cnt_q + 1;
           stagger_cnt_d = inst_last ?
             0 : ((stagger_cnt_q == curr_cfg.stagger_max) ? 0 : stagger_cnt_q + 1);
+          // TODO: add offset!
         end else begin
           rpt_cnt_d = rpt_cnt_q + 1;
           stagger_cnt_d = (stagger_cnt_q == curr_cfg.stagger_max) ? 0 : stagger_cnt_q + 1;

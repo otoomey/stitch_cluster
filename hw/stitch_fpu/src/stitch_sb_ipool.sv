@@ -1,5 +1,5 @@
 // modified fifo_v3; resets to some defined input
-module stitch_sb_addr_ipool #(
+module stitch_sb_ipool #(
     parameter int unsigned Depth        = 8,    // depth can be arbitrary from 0 to 2**32
     parameter [Depth-1:0] ResetState [Depth-1:0] = '0,
     // DO NOT OVERWRITE THIS PARAMETER
