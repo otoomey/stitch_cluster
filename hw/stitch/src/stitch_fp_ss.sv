@@ -3,7 +3,7 @@
 
 // Floating Point Subsystem
 // initialises a wide FPU 
-module stitch_fp_ss2 import snitch_pkg::*; #(
+module stitch_fp_ss import snitch_pkg::*; #(
     parameter int unsigned  AddrWidth = 0,
     parameter int unsigned  BankGroupAddrWidth = 0,
     parameter int unsigned  DataWidth = 0,
@@ -29,7 +29,9 @@ module stitch_fp_ss2 import snitch_pkg::*; #(
     parameter bit           XF8 = 0,
     parameter bit           XF8ALT = 0,
     parameter bit           XFVEC = 0,
-    parameter fpnew_pkg::fpu_implementation_t FPUImplementation = '0
+    parameter fpnew_pkg::fpu_implementation_t FPUImplementation = '0,
+    // derived parameters
+    parameter int unsigned  InitialOffset = ((2**BankGroupAddrWidth) / 4) - 8
 ) (
     input  logic                        clk_i,
     input  logic                        rst_i,
@@ -52,13 +54,20 @@ module stitch_fp_ss2 import snitch_pkg::*; #(
     output tcdm_rsp_t                   tcdm_rsp_o,
 
     // Memory Interface for accelerated FP load/stores.
-    output bank_req_t [3:0]    bank_req_o,
-    input  bank_rsp_t [3:0]    bank_rsp_i,
+    output bank_req_t [3:0]             bank_req_o,
+    input  bank_rsp_t [3:0]             bank_rsp_i,
 
     // FPU **un-timed** Side-channel
     input  fpnew_pkg::roundmode_e       fpu_rnd_mode_i,
     input  fpnew_pkg::fmt_mode_t        fpu_fmt_mode_i,
     output fpnew_pkg::status_t          fpu_status_o,
+
+    // Configuration registers
+    input  fpu_cfg_word_e               cfg_word_i,
+    input  logic [3:0]                  cfg_bank_sel_i,
+    output logic [31:0]                 cfg_rdata_o,
+    input  logic [31:0]                 cfg_wdata_i,
+    input  logic                        cfg_write_i,
 
     output fpu_trace_port_t             trace_port_o,
     output fpu_sequencer_trace_port_t   sequencer_tracer_port_o,
@@ -83,11 +92,11 @@ module stitch_fp_ss2 import snitch_pkg::*; #(
     // ---------------------
     // Offset configuration registers
     // ---------------------
-    logic [3:0][BankGroupAddrWidth/4:0] cfg_offset;
-    logic [3:0][BankGroupAddrWidth/4:0] cfg_stride;
+    logic [3:0][BankGroupAddrWidth/4:0] cfg_offset_d, cfg_offset_q;
+    logic [3:0][BankGroupAddrWidth/4:0] cfg_stride_d, cfg_stride_q;
 
     // ---------------------
-    // Sequencer
+    // Sequencer and configuration
     // ---------------------
     acc_req_t       seq_out, seq_out_q;
     logic           seq_out_valid, seq_out_valid_q;
@@ -134,6 +143,39 @@ module stitch_fp_ss2 import snitch_pkg::*; #(
         .ready_i    (seq_out_ready_q),
         .data_o     (seq_out_q)
     );
+
+    `FFAR(cfg_offset_q, cfg_offset_d, InitialOffset, clk_i, rst_i)
+    `FFAR(cfg_stride_q, cfg_stride_d, '0, clk_i, rst_i)
+ 
+    // write configuration registers
+    for (genvar i = 0; i < 4; i++) begin
+        always_comb begin
+            cfg_stride_d[i] = cfg_offset_q[i];
+            cfg_stride_d[i] = cfg_stride_q[i];
+            if (cfg_write_i & cfg_bank_sel_i[i]) begin
+                unique case (cfg_word_i)
+                    fpu_cfg_word_e::Offset: begin
+                        cfg_offset_d[i] = cfg_wdata_i;
+                    end
+                    fpu_cfg_word_e::Stride: begin
+                        cfg_stride_d[i] = cfg_wdata_i;
+                    end
+                endcase
+            end
+        end
+    end
+
+    // read configuration registers
+    always_comb begin
+        unique case (cfg_word_i)
+            fpu_cfg_word_e::Offset: begin
+                cfg_rdata_o = cfg_offset_d[cfg_bank_sel_i[1:0]];
+            end
+            fpu_cfg_word_e::Stride: begin
+                cfg_rdata_o = cfg_stride_d[cfg_bank_sel_i[1:0]];
+            end
+        endcase
+    end
 
     // ---------------------
     // Scoreboard & Decoder
@@ -205,10 +247,10 @@ module stitch_fp_ss2 import snitch_pkg::*; #(
     for (genvar i = 0; i < 3; i++) begin
         always_comb begin
             case (fpr_srcs[i][4:3])
-                0: sb_dec_tag.fpr_src_addrs[i] = {cfg_offset[0], fpr_srcs[i][2:0]};
-                1: sb_dec_tag.fpr_src_addrs[i] = {cfg_offset[1], fpr_srcs[i][2:0]};
-                2: sb_dec_tag.fpr_src_addrs[i] = {cfg_offset[2], fpr_srcs[i][2:0]};
-                3: sb_dec_tag.fpr_src_addrs[i] = {cfg_offset[3], fpr_srcs[i][2:0]};
+                0: sb_dec_tag.fpr_src_addrs[i] = {cfg_offset_q[0], fpr_srcs[i][2:0]};
+                1: sb_dec_tag.fpr_src_addrs[i] = {cfg_offset_q[1], fpr_srcs[i][2:0]};
+                2: sb_dec_tag.fpr_src_addrs[i] = {cfg_offset_q[2], fpr_srcs[i][2:0]};
+                3: sb_dec_tag.fpr_src_addrs[i] = {cfg_offset_q[3], fpr_srcs[i][2:0]};
                 default:;
             endcase
         end
@@ -216,10 +258,10 @@ module stitch_fp_ss2 import snitch_pkg::*; #(
 
     always_comb begin
         case (fpr_rd[4:3])
-            0: sb_dec_tag.fpr_rd_addr = {cfg_offset[0], fpr_rd[2:0]};
-            1: sb_dec_tag.fpr_rd_addr = {cfg_offset[1], fpr_rd[2:0]};
-            2: sb_dec_tag.fpr_rd_addr = {cfg_offset[2], fpr_rd[2:0]};
-            3: sb_dec_tag.fpr_rd_addr = {cfg_offset[3], fpr_rd[2:0]};
+            0: sb_dec_tag.fpr_rd_addr = {cfg_offset_q[0], fpr_rd[2:0]};
+            1: sb_dec_tag.fpr_rd_addr = {cfg_offset_q[1], fpr_rd[2:0]};
+            2: sb_dec_tag.fpr_rd_addr = {cfg_offset_q[2], fpr_rd[2:0]};
+            3: sb_dec_tag.fpr_rd_addr = {cfg_offset_q[3], fpr_rd[2:0]};
             default:;
         endcase
     end

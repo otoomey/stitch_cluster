@@ -67,6 +67,11 @@ package snitch_pkg;
     DoubleWord = 2'b11
   } fpu_ls_size_e;
 
+  typedef enum logic {
+    Offset = 2'b00,
+    Stride = 2'b01
+  } fpu_cfg_word_e;
+
   typedef struct packed {
     logic         sd;     // signal dirty - read-only - hardwired zero
     logic [7:0]   wpri3;  // writes preserved reads ignored

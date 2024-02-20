@@ -38,8 +38,9 @@ module stitch_sequencer import snitch_pkg::*; #(
   output data_t                            oup_qdata_argb_o,
   output addr_t                            oup_qdata_argc_o,
   output logic                             oup_qvalid_o,
-  input  logic                             oup_qready_i
-  // SSR stream control interface
+  input  logic                             oup_qready_i,
+  // Stride update flags
+  output logic                             oup_stride_period_o
 );
   localparam int RptBits = 16;
 
@@ -158,6 +159,7 @@ module stitch_sequencer import snitch_pkg::*; #(
     inst_cnt_d = inst_cnt_q;
     rpt_cnt_d = rpt_cnt_q;
     stagger_cnt_d = stagger_cnt_q;
+    oup_stride_period_o = 0;
     if (seq_done) begin
       // We are aborting the loop: reset counters
       inst_cnt_d = '0;
@@ -170,6 +172,7 @@ module stitch_sequencer import snitch_pkg::*; #(
           rpt_cnt_d = rpt_last ? 0 : rpt_cnt_q + 1;
           stagger_cnt_d = rpt_last ?
             0 : ((stagger_cnt_q == curr_cfg.stagger_max) ? 0 : stagger_cnt_q + 1);
+          oup_stride_period_o = 1;
         end else begin
           inst_cnt_d = inst_cnt_q + 1;
         end
@@ -179,7 +182,7 @@ module stitch_sequencer import snitch_pkg::*; #(
           inst_cnt_d = inst_last ? 0 : inst_cnt_q + 1;
           stagger_cnt_d = inst_last ?
             0 : ((stagger_cnt_q == curr_cfg.stagger_max) ? 0 : stagger_cnt_q + 1);
-          // TODO: add offset!
+          oup_stride_period_o = 1;
         end else begin
           rpt_cnt_d = rpt_cnt_q + 1;
           stagger_cnt_d = (stagger_cnt_q == curr_cfg.stagger_max) ? 0 : stagger_cnt_q + 1;
