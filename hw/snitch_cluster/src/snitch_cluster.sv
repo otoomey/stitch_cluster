@@ -153,6 +153,9 @@ module snitch_cluster
   parameter bit          RegisterFPUIn      = 0,
   /// Insert Pipeline registers immediately after FPU datapath
   parameter bit          RegisterFPUOut     = 0,
+  parameter bit          XFBNK              = 0,
+  parameter bit          RegisterDecoder    = 0,
+  parameter int unsigned FPUScoreboardDepth = 0,
   /// Run Snitch (the integer part) at half of the clock frequency
   parameter bit          IsoCrossing        = 0,
   parameter axi_pkg::xbar_latency_e NarrowXbarLatency = axi_pkg::CUT_ALL_PORTS,
@@ -472,6 +475,10 @@ module snitch_cluster
   mem_req_t [NrSuperBanks-1:0][BanksPerSuperBank-1:0] ic_req;
   mem_rsp_t [NrSuperBanks-1:0][BanksPerSuperBank-1:0] ic_rsp;
 
+  // 2. Accelerated Memory Subsystem
+  mem_req_t [NrBanks-1:0] ic_fp_req;
+  mem_rsp_t [NrBanks-1:0] ic_fp_rsp;
+
   mem_dma_req_t [NrSuperBanks-1:0] sb_dma_req;
   mem_dma_rsp_t [NrSuperBanks-1:0] sb_dma_rsp;
 
@@ -485,6 +492,10 @@ module snitch_cluster
 
   tcdm_req_t [NrTCDMPortsCores-1:0] tcdm_req;
   tcdm_rsp_t [NrTCDMPortsCores-1:0] tcdm_rsp;
+
+  // Ports used for XFBNK mode
+  tcdm_req_t [NrCores-1:0] tcdm_routed_req;
+  tcdm_rsp_t [NrCores-1:0] tcdm_routed_rsp;
 
   core_events_t [NrCores-1:0] core_events;
   tcdm_events_t               tcdm_events;
@@ -670,24 +681,45 @@ module snitch_cluster
     mem_req_t [BanksPerSuperBank-1:0] amo_req;
     mem_rsp_t [BanksPerSuperBank-1:0] amo_rsp;
 
-    mem_wide_narrow_mux #(
-      .NarrowDataWidth (NarrowDataWidth),
-      .WideDataWidth (WideDataWidth),
-      .mem_narrow_req_t (mem_req_t),
-      .mem_narrow_rsp_t (mem_rsp_t),
-      .mem_wide_req_t (mem_dma_req_t),
-      .mem_wide_rsp_t (mem_dma_rsp_t)
-    ) i_tcdm_mux (
-      .clk_i,
-      .rst_ni,
-      .in_narrow_req_i (ic_req [i]),
-      .in_narrow_rsp_o (ic_rsp [i]),
-      .in_wide_req_i (sb_dma_req [i]),
-      .in_wide_rsp_o (sb_dma_rsp [i]),
-      .out_req_o (amo_req),
-      .out_rsp_i (amo_rsp),
-      .sel_wide_i (sb_dma_req[i].q_valid)
-    );
+    if (XFBNK) begin : gen_bank_narrow_mux
+      mem_wide_narrow_mux #(
+        .NarrowDataWidth (NarrowDataWidth),
+        .WideDataWidth (WideDataWidth),
+        .mem_narrow_req_t (mem_req_t),
+        .mem_narrow_rsp_t (mem_rsp_t),
+        .mem_wide_req_t (mem_dma_req_t),
+        .mem_wide_rsp_t (mem_dma_rsp_t)
+      ) i_tcdm_mux (
+        .clk_i,
+        .rst_ni,
+        .in_narrow_req_i (ic_fp_req [i*BanksPerSuperBank+:BanksPerSuperBank]),
+        .in_narrow_rsp_o (ic_fp_rsp [i*BanksPerSuperBank+:BanksPerSuperBank]),
+        .in_wide_req_i (sb_dma_req [i]),
+        .in_wide_rsp_o (sb_dma_rsp [i]),
+        .out_req_o (amo_req),
+        .out_rsp_i (amo_rsp),
+        .sel_wide_i (sb_dma_req[i].q_valid)
+      );
+    end else begin
+      mem_wide_narrow_mux #(
+        .NarrowDataWidth (NarrowDataWidth),
+        .WideDataWidth (WideDataWidth),
+        .mem_narrow_req_t (mem_req_t),
+        .mem_narrow_rsp_t (mem_rsp_t),
+        .mem_wide_req_t (mem_dma_req_t),
+        .mem_wide_rsp_t (mem_dma_rsp_t)
+      ) i_tcdm_mux (
+        .clk_i,
+        .rst_ni,
+        .in_narrow_req_i (ic_req [i]),
+        .in_narrow_rsp_o (ic_rsp [i]),
+        .in_wide_req_i (sb_dma_req [i]),
+        .in_wide_rsp_o (sb_dma_rsp [i]),
+        .out_req_o (amo_req),
+        .out_rsp_i (amo_rsp),
+        .sel_wide_i (sb_dma_req[i].q_valid)
+      );
+    end
 
     // generate banks of the superbank
     for (genvar j = 0; j < BanksPerSuperBank; j++) begin : gen_tcdm_bank
@@ -756,27 +788,48 @@ module snitch_cluster
     end
   end
 
-  snitch_tcdm_interconnect #(
-    .NumInp (NumTCDMIn),
-    .NumOut (NrBanks),
-    .tcdm_req_t (tcdm_req_t),
-    .tcdm_rsp_t (tcdm_rsp_t),
-    .mem_req_t (mem_req_t),
-    .mem_rsp_t (mem_rsp_t),
-    .MemAddrWidth (TCDMMemAddrWidth),
-    .DataWidth (NarrowDataWidth),
-    .user_t (tcdm_user_t),
-    .MemoryResponseLatency (1 + RegisterTCDMCuts),
-    .Radix (Radix),
-    .Topology (Topology)
-  ) i_tcdm_interconnect (
-    .clk_i,
-    .rst_ni,
-    .req_i ({axi_soc_req, tcdm_req}),
-    .rsp_o ({axi_soc_rsp, tcdm_rsp}),
-    .mem_req_o (ic_req),
-    .mem_rsp_i (ic_rsp)
-  );
+  if (XFBNK) begin : gen_router
+    stitch_router #(
+      .NumInp (NumTCDMIn),
+      .NumOut (NrBanks),
+      .tcdm_req_t (tcdm_req_t),
+      .tcdm_rsp_t (tcdm_rsp_t),
+      .MemAddrWidth (TCDMMemAddrWidth),
+      .DataWidth (NarrowDataWidth),
+      .Radix (Radix),
+      .Topology (Topology),
+      .RouteAddrCoall(2)
+    ) i_tcdm_router (
+      .clk_i,
+      .rst_ni,
+      .req_i ({axi_soc_req, tcdm_req}),
+      .rsp_o ({axi_soc_rsp, tcdm_rsp}),
+      .req_o (tcdm_routed_req),
+      .rsp_i (tcdm_routed_rsp)
+    );
+  end else begin : gen_interconnect
+    snitch_tcdm_interconnect #(
+      .NumInp (NumTCDMIn),
+      .NumOut (NrBanks),
+      .tcdm_req_t (tcdm_req_t),
+      .tcdm_rsp_t (tcdm_rsp_t),
+      .mem_req_t (mem_req_t),
+      .mem_rsp_t (mem_rsp_t),
+      .MemAddrWidth (TCDMMemAddrWidth),
+      .DataWidth (NarrowDataWidth),
+      .user_t (tcdm_user_t),
+      .MemoryResponseLatency (1 + RegisterTCDMCuts),
+      .Radix (Radix),
+      .Topology (Topology)
+    ) i_tcdm_interconnect (
+      .clk_i,
+      .rst_ni,
+      .req_i ({axi_soc_req, tcdm_req}),
+      .rsp_o ({axi_soc_rsp, tcdm_rsp}),
+      .mem_req_o (ic_req),
+      .mem_rsp_i (ic_rsp)
+    );
+  end
 
   logic clk_d2;
 
@@ -851,6 +904,7 @@ module snitch_cluster
         .Xfrep (Xfrep[i]),
         .Xssr (Xssr[i]),
         .Xipu (1'b0),
+        .XFBNK (XFBNK),
         .VMSupport (VMSupport),
         .NumIntOutstandingLoads (NumIntOutstandingLoads[i]),
         .NumIntOutstandingMem (NumIntOutstandingMem[i]),
@@ -872,6 +926,8 @@ module snitch_cluster
         .RegisterSequencer (RegisterSequencer),
         .RegisterFPUIn (RegisterFPUIn),
         .RegisterFPUOut (RegisterFPUOut),
+        .RegisterDecoder(RegisterDecoder),
+        .FPUScoreboardDepth(FPUScoreboardDepth),
         .TCDMAddrWidth (TCDMAddrWidth),
         .DebugSupport (DebugSupport)
       ) i_snitch_cc (
@@ -888,6 +944,10 @@ module snitch_cluster
         .data_rsp_i (core_rsp[i]),
         .tcdm_req_o (tcdm_req_wo_user),
         .tcdm_rsp_i (tcdm_rsp[TcdmPortsOffs+:TcdmPorts]),
+        .tcdm_req_i (tcdm_routed_req[i]),
+        .tcdm_rsp_o (tcdm_routed_rsp[i]),
+        .mem_req_o (ic_fp_req[i*4+:4]),
+        .mem_rsp_i (ic_fp_rsp[i*4+:4]),
         .axi_dma_req_o (axi_dma_req),
         .axi_dma_res_i (axi_dma_res),
         .axi_dma_busy_o (),

@@ -31,6 +31,9 @@ module snitch_cc #(
   parameter type         tcdm_req_t         = logic,
   /// Data port response type.
   parameter type         tcdm_rsp_t         = logic,
+
+  parameter type         mem_req_t          = logic,
+  parameter type         mem_rsp_t          = logic,
   /// TCDM User Payload
   parameter type         tcdm_user_t        = logic,
   parameter type         axi_req_t          = logic,
@@ -55,6 +58,7 @@ module snitch_cc #(
   parameter bit          XF16ALT            = 0,
   parameter bit          XFVEC              = 0,
   parameter bit          XFDOTP             = 0,
+  parameter bit          XFBNK              = 0,
   /// Enable Snitch DMA
   parameter bit          Xdma               = 0,
   /// Has `frep` support.
@@ -96,6 +100,9 @@ module snitch_cc #(
   parameter bit          RegisterFPUIn      = 0,
   /// Insert Pipeline registers immediately after FPU datapath
   parameter bit          RegisterFPUOut     = 0,
+  parameter bit          RegisterDecoder    = 0,
+  parameter int unsigned FPUScoreboardDepth = 0,
+
   parameter snitch_pma_pkg::snitch_pma_t SnitchPMACfg = '{default: 0},
   /// Enable debug support.
   parameter bit          DebugSupport = 1,
@@ -119,6 +126,12 @@ module snitch_cc #(
   // TCDM Streamer Ports
   output tcdm_req_t [TCDMPorts-1:0]  tcdm_req_o,
   input  tcdm_rsp_t [TCDMPorts-1:0]  tcdm_rsp_i,
+  // TCDM Streamer Ports (input for banked mode)
+  input  tcdm_req_t                  tcdm_req_i,
+  output tcdm_rsp_t                  tcdm_rsp_o,
+  // Memory Bank Streaming Ports
+  output mem_req_t [3:0]             mem_req_o,
+  input  mem_req_t [3:0]             mem_rsp_i,
   // Accelerator Offload port
   // DMA ports
   output axi_req_t                   axi_dma_req_o,
@@ -448,7 +461,87 @@ module snitch_cc #(
   logic             ssr_streamctl_valid;
   logic             ssr_streamctl_ready;
 
-  if (FPEn) begin : gen_fpu
+  if (FPEn & XFBNK & !Xssr) begin : gen_banked_fpu
+    snitch_pkg::core_events_t fp_ss_core_events;
+
+    dreq_t fpu_dreq;
+    drsp_t fpu_drsp;
+
+    stitch_fp_ss #(
+      .AddrWidth (AddrWidth),
+      .BankGroupAddrWidth(BankGroupAddrWidth),
+      .DataWidth (DataWidth),
+      .NumFPOutstandingLoads (NumFPOutstandingLoads),
+      .NumFPOutstandingMem (NumFPOutstandingMem),
+      .NumFPUSequencerInstr (NumSequencerInstr),
+      .ScoreboardDepth (FPUScoreboardDepth),
+      .RegisterSequencer (RegisterSequencer),
+      .RegisterDecoder (RegisterDecoder),
+      .RegisterFPUIn (RegisterFPUIn),
+      .RegisterFPUOut (RegisterFPUOut),
+      .tcdm_req_t (dreq_t),
+      .tcdm_req_t (drsp_t),
+      .bank_req_t (mem_req_t),
+      .bank_rsp_t (mem_rsp_t),
+      .acc_req_t (acc_req_t),
+      .acc_resp_t (acc_resp_t),
+      .RVF (RVF),
+      .RVD (RVD),
+      .XF16 (XF16),
+      .XF16ALT (XF16ALT),
+      .XF8 (XF8),
+      .XF8ALT (XF8ALT),
+      .XFVEC (XFVEC),
+      .FPUImplementation (FPUImplementation),
+    ) i_snitch_fp_ss (
+      .clk_i,
+      .rst_i            ( ~rst_ni | (~rst_fp_ss_ni)   ),
+      .hart_id_i        ( hart_id_i      ),
+
+      .acc_req_i        ( acc_snitch_req ),
+      .acc_req_valid_i  ( acc_qvalid     ),
+      .acc_req_ready_o  ( acc_qready     ),
+      .acc_resp_o       ( acc_seq        ),
+      .acc_resp_valid_o ( acc_pvalid     ),
+      .acc_resp_ready_i ( acc_pready     ),
+
+      .tcdm_req_o       ( fpu_dreq       ),
+      .tcdm_rsp_i       ( fpu_drsp       ),
+      .tcdm_req_i       ( tcdm_req_i     ),
+      .tcdm_rsp_o       ( tcdm_rsp_o     ),
+      .bank_req_o       ( mem_req_o      ),
+      .bank_rsp_i       ( mem_rsp_i      ),
+      
+      .fpu_rnd_mode_i   ( fpu_rnd_mode   ),
+      .fpu_fmt_mode_i   ( fpu_fmt_mode   ),
+      .fpu_status_o     ( fpu_status     ),
+      .cfg_word_i       (), // TODO
+      .cfg_bank_sel_i   (),
+      .cfg_rdata_o      (),
+      .cfg_wdata_i      (),
+      .cfg_write_i      ('0),
+      .cfg_ready_o      ('0),
+      // .ssr_raddr_o      ( ssr_raddr      ),
+      // .ssr_rdata_i      ( ssr_rdata      ),
+      // .ssr_rvalid_o     ( ssr_rvalid     ),
+      // .ssr_rready_i     ( ssr_rready     ),
+      // .ssr_rdone_o      ( ssr_rdone      ),
+      // .ssr_waddr_o      ( ssr_waddr      ),
+      // .ssr_wdata_o      ( ssr_wdata      ),
+      // .ssr_wvalid_o     ( ssr_wvalid     ),
+      // .ssr_wready_i     ( ssr_wready     ),
+      // .ssr_wdone_o      ( ssr_wdone      ),
+      // .streamctl_done_i   ( ssr_streamctl_done  ),
+      // .streamctl_valid_i  ( ssr_streamctl_valid ),
+      // .streamctl_ready_o  ( ssr_streamctl_ready ),
+
+      // pragma translate_off
+      .trace_port_o            ( fpu_trace           ),
+      .sequencer_tracer_port_o ( fpu_sequencer_trace ),
+      // pragma translate_on
+      .core_events_o      ( fp_ss_core_events   )
+    );
+  end else if (FPEn) begin : gen_fpu
     snitch_pkg::core_events_t fp_ss_core_events;
 
     dreq_t fpu_dreq;

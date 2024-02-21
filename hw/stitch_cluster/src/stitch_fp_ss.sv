@@ -68,6 +68,7 @@ module stitch_fp_ss import snitch_pkg::*; #(
     output logic [31:0]                 cfg_rdata_o,
     input  logic [31:0]                 cfg_wdata_i,
     input  logic                        cfg_write_i,
+    output logic                        cfg_ready_o,
 
     output fpu_trace_port_t             trace_port_o,
     output fpu_sequencer_trace_port_t   sequencer_tracer_port_o,
@@ -88,6 +89,7 @@ module stitch_fp_ss import snitch_pkg::*; #(
     vfpr_rsp_t wr_vfpr_rsp;
     logic [ScoreboardDepth-1:0] wr_sb_index;
     logic                       wr_sb_index_valid;            
+    logic                       wr_acc_ready;
 
     // ---------------------
     // Offset configuration registers
@@ -101,11 +103,13 @@ module stitch_fp_ss import snitch_pkg::*; #(
     acc_req_t       seq_out, seq_out_q;
     logic           seq_out_valid, seq_out_valid_q;
     logic           seq_out_ready, seq_out_ready_q;
+
+    logic seq_stride_inc;
     stitch_sequencer #(
         .AddrWidth  (AddrWidth),
         .DataWidth  (DataWidth),
         .Depth      (NumFPUSequencerInstr)
-    ) i_stitch_fpu_sequencer (
+    ) i_stitch_fpu_sequencer ( 
         .clk_i,
         .rst_i,
         .fpu_id_i,
@@ -127,7 +131,8 @@ module stitch_fp_ss import snitch_pkg::*; #(
         .oup_qdata_argb_o (seq_out.data_argb),
         .oup_qdata_argc_o (seq_out.data_argc),
         .oup_qvalid_o     (seq_out_valid),
-        .oup_qready_i     (seq_out_ready)
+        .oup_qready_i     (seq_out_ready),
+        .oup_inc_offset_o (seq_stride_inc) 
     );
 
     spill_register  #(
@@ -148,11 +153,14 @@ module stitch_fp_ss import snitch_pkg::*; #(
     `FFAR(cfg_stride_q, cfg_stride_d, '0, clk_i, rst_i)
  
     // write configuration registers
+    logic stride;
+    assign stride = seq_stride_inc & seq_out_valid & seq_out_ready;
+    assign cfg_ready_o = seq_out_valid & seq_out_ready;
     for (genvar i = 0; i < 4; i++) begin
         always_comb begin
-            cfg_stride_d[i] = cfg_offset_q[i];
+            cfg_stride_d[i] = cfg_offset_q[i] + (stride ? cfg_stride_q[i] : 0);
             cfg_stride_d[i] = cfg_stride_q[i];
-            if (cfg_write_i & cfg_bank_sel_i[i]) begin
+            if (cfg_write_i & cfg_bank_sel_i[i] & cfg_ready_o) begin
                 unique case (cfg_word_i)
                     fpu_cfg_word_e::Offset: begin
                         cfg_offset_d[i] = cfg_wdata_i;
@@ -215,6 +223,9 @@ module stitch_fp_ss import snitch_pkg::*; #(
     logic sb_full;
     logic [3:0] sb_collision;
 
+    assign seq_out_ready_q = ~sb_full & sb_dec_tag_ready;
+    assign sb_dec_tag_valid = ~sb_full & seq_out_valid_q;
+
     stitch_decoder i_decode (
         .ins_i          (seq_out_q.data_op),
         .fpu_rnd_mode_i (fpu_rnd_mode_i),
@@ -274,7 +285,7 @@ module stitch_fp_ss import snitch_pkg::*; #(
         .clk_i,
         .rst_i,
         .push_rd_addr_i         (sb_dec_tag.fpr_rd_addr),
-        .push_valid_i           (seq_out_valid_q & sb_dec_tag_ready & sb_dec_tag.rd_is_fpr),
+        .push_valid_i           (sb_dec_tag_valid & seq_out_ready_q & sb_dec_tag.rd_is_fpr),
         .entry_index_o          (sb_dec_tag.sb_rd_index),
         .pop_index_i            (wr_sb_index),
         .pop_valid_i            (wr_sb_index_valid),
@@ -328,8 +339,8 @@ module stitch_fp_ss import snitch_pkg::*; #(
     } vfpr_tag_t;
 
     vfpr_tag_t      vfpr_tag_in, vfpr_tag_out;
-    logic           vfpr_in_valid, vfpr_out_valid;
-    logic           vfpr_in_ready, vfpr_out_ready;
+    logic           vfpr_ready, vfpr_out_valid;
+                                ;
 
     logic [2:0][FLEN-1:0] vfpr_operands;
     logic [2:0][FLEN-1:0] fpu_operands;
@@ -369,8 +380,8 @@ module stitch_fp_ss import snitch_pkg::*; #(
         .raddr_i        (sb_dec_out_q),
         .rtag_i         (vfpr_tag_in),
         .ren_i          (sb_dec_out_q.fpr_srcs_en),
-        .rvalid_i       (vfpr_in_valid),
-        .rready_o       (vfpr_in_ready),
+        .rvalid_i       (sb_dec_out_valid),
+        .rready_o       (sb_dec_out_ready),
         .wr_port_req_i  (wr_vfpr_req),
         .wr_port_rsp_o  (wr_vfpr_rsp),
         .rdata_o        (vfpr_operands),
@@ -427,6 +438,8 @@ module stitch_fp_ss import snitch_pkg::*; #(
     logic           fpu_in_valid, fpu_out_valid;
     logic           fpu_in_ready, fpu_out_ready;
 
+    assign fpu_in_valid = vfpr_out_valid & vfpr_tag_out.is_fpu_op;
+
     assign fpu_tag_in.rd_name = vfpr_tag_out.rd_name;
     assign fpu_tag_in.fpr_rd_addr = vfpr_tag_out.fpr_rd_addr;
     assign fpu_tag_in.sb_rd_index = vfpr_tag_out.sb_rd_index;
@@ -480,6 +493,8 @@ module stitch_fp_ss import snitch_pkg::*; #(
     logic           lsu_in_valid, lsu_out_valid;
     logic           lsu_in_ready, lsu_out_ready;
 
+    assign lsu_in_valid = vfpr_out_valid & (vfpr_tag_out.is_store_op | vfpr_tag_out.is_load_op);
+
     snitch_lsu #(
         .AddrWidth              (AddrWidth),
         .DataWidth              (DataWidth),
@@ -511,6 +526,9 @@ module stitch_fp_ss import snitch_pkg::*; #(
         .data_rsp_i     (tcdm_rsp_i)
     );
 
+    assign vfpr_out_ready = (lsu_in_valid & lsu_in_ready) 
+                          | (fpu_in_valid & fpu_in_ready);
+
     // ---------------------
     // WR
     // ---------------------
@@ -519,56 +537,127 @@ module stitch_fp_ss import snitch_pkg::*; #(
     typedef enum logic [1:0] {
         FPU,
         LSU,
-        Acc,
-        TCDM
+        TCDM,
+        None
     } wr_sel_e;
-
-    wr_sel_e wr_sel;
 
     logic [DataWidth-1:0] nan_boxed_arga;
     assign nan_boxed_arga = {{(DataWidth-32){1'b1}}, sb_dec_out.acc_value};
 
+    wr_sel_e wr_state_q, wr_state_d;
+    wr_sel_e wr_sel;
+
+    `FFAR(wr_state_q, wr_state_d, '0, clk_i, rst_i)
+
     always_comb begin
+        lsu_out_ready = 0;
+        fpu_out_ready = 0;
+        wr_acc_ready = 0;
+        wr_state_d = wr_state_q;
+        wr_sb_index_valid = 0;
+        tcdm_rsp_o.q_ready = 0;
+
+        if (wr_vfpr_rsp.p_valid) begin
+            wr_state_d = None;
+        end
+
+        // if we are in the none state then we are free
+        // to transition to a new state. Otherwise wait to avoid
+        // violating amba'ness
+        if (fpu_out_valid & wr_state_d == None) begin
+            wr_sel = FPU;
+        end else if (lsu_out_valid & wr_state_d == None) begin
+            wr_sel = LSU;
+        end else if (lsu_out_valid & wr_state_d == None) begin
+            wr_sel = TCDM;
+        end else begin
+            wr_sel = None;
+        end
+
         unique case (wr_sel)
             FPU: begin
+                wr_state_d = FPU;
                 wr_vfpr_req.q.addr = fpu_tag_out.fpr_rd_addr;
                 wr_vfpr_req.q.data = fpu_result;
                 wr_vfpr_req.q.write = '1;
                 wr_vfpr_req.q.strb = '1;
                 wr_vfpr_req.q.amo = reqrsp_pkg::AMONone;
                 wr_vfpr_req.q.user = '0;
+
+                wr_vfpr_req.q_valid = fpu_out_valid;
+                fpu_out_ready = (wr_vfpr_rsp.q_ready & fpu_tag_out.rd_is_fpr) 
+                              | (acc_rsp_ready_i & fpu_tag_out.rd_is_acc);
                 wr_sb_index = fpu_tag_out.sb_rd_index;
+                wr_sb_index_valid = fpu_out_valid & fpu_out_ready;
             end
             LSU: begin
+                wr_state_d = LSU;
                 wr_vfpr_req.q.addr = lsu_tag_out.fpr_rd_addr;
                 wr_vfpr_req.q.data = lsu_result;
                 wr_vfpr_req.q.write = '1;
                 wr_vfpr_req.q.strb = '1;
                 wr_vfpr_req.q.amo = reqrsp_pkg::AMONone;
                 wr_vfpr_req.q.user = '0;
+
+                wr_vfpr_req.q_valid = lsu_out_valid;
+                lsu_out_ready = wr_vfpr_rsp.q_ready;
                 wr_sb_index = lsu_tag_out.sb_rd_index;
-            Acc:
-                wr_vfpr_req.q.addr = sb_dec_out.fpr_rd_addr;
-                wr_vfpr_req.q.data = nan_boxed_arga[FLEN-1:0];
-                wr_vfpr_req.q.write = '1;
-                wr_vfpr_req.q.strb = '1;
-                wr_vfpr_req.q.amo = reqrsp_pkg::AMONone;
-                wr_vfpr_req.q.user = '0;
-                wr_sb_index = sb_dec_out.sb_rd_index;
+                wr_sb_index_valid = lsu_out_valid & lsu_out_ready;
             end
-            // by default allow tcdm interface to connect
-            default: begin
+            TCDM: begin
+                wr_state_d = TCDM;
                 wr_sb_index = 'x;
+                wr_sb_index_valid = 0;
                 wr_vfpr_req = tcdm_req_i;
+                tcdm_rsp_o.q_ready = wr_vfpr_rsp.q_ready;
             end
+            default:;
         endcase
     end
 
+    // if the tcdm requested something, make sure we route the response appropriately
+    // the other datapaths don't care about responses
     assign tcdm_rsp_o.p = wr_vfpr_rsp.p;
+    assign tcdm_rsp_o.p_valid = wr_vfpr_rsp.p_valid & (wr_state_q == TCDM);
 
     // determine if fpu result is written to accelerator bus
     assign acc_resp_o.id = fpu_tag_out.rd_name;
     assign acc_resp_o.data = fpu_result;
-    
+    assign acc_rsp_valid_o = (fpu_tag_out.rd_is_acc & fpu_out_valid);
+
+    assign trace_port_o.source       = snitch_pkg::SrcFpu;
+    assign trace_port_o.acc_q_hs     = (acc_req_valid_q  && acc_req_ready_q );
+    assign trace_port_o.fpu_out_hs   = (fpu_out_valid && fpu_out_ready );
+    assign trace_port_o.lsu_q_hs     = (lsu_qvalid    && lsu_qready    );
+    assign trace_port_o.op_in        = acc_req_q.data_op;
+    assign trace_port_o.rs1          = rs1;
+    assign trace_port_o.rs2          = rs2;
+    assign trace_port_o.rs3          = rs3;
+    assign trace_port_o.rd           = rd;
+    assign trace_port_o.op_sel_0     = op_select[0];
+    assign trace_port_o.op_sel_1     = op_select[1];
+    assign trace_port_o.op_sel_2     = op_select[2];
+    assign trace_port_o.src_fmt      = src_fmt;
+    assign trace_port_o.dst_fmt      = dst_fmt;
+    assign trace_port_o.int_fmt      = int_fmt;
+    assign trace_port_o.acc_qdata_0  = acc_qdata[0];
+    assign trace_port_o.acc_qdata_1  = acc_qdata[1];
+    assign trace_port_o.acc_qdata_2  = acc_qdata[2];
+    assign trace_port_o.op_0         = op[0];
+    assign trace_port_o.op_1         = op[1];
+    assign trace_port_o.op_2         = op[2];
+    assign trace_port_o.use_fpu      = use_fpu;
+    assign trace_port_o.fpu_in_rd    = fpu_tag_in.rd;
+    assign trace_port_o.fpu_in_acc   = fpu_tag_in.acc;
+    assign trace_port_o.ls_size      = ls_size;
+    assign trace_port_o.is_load      = is_load;
+    assign trace_port_o.is_store     = is_store;
+    assign trace_port_o.lsu_qaddr    = i_snitch_lsu.lsu_qaddr_i;
+    assign trace_port_o.lsu_rd       = lsu_rd;
+    assign trace_port_o.acc_wb_ready = (result_select == ResAccBus);
+    assign trace_port_o.fpu_out_acc  = fpu_tag_out.acc;
+    assign trace_port_o.fpr_waddr    = fpr_waddr[0];
+    assign trace_port_o.fpr_wdata    = fpr_wdata[0];
+    assign trace_port_o.fpr_we       = fpr_we[0];
 endmodule
 
