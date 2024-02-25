@@ -435,6 +435,7 @@ module snitch_cc #(
   // pragma translate_off
   snitch_pkg::fpu_trace_port_t fpu_trace;
   snitch_pkg::fpu_sequencer_trace_port_t fpu_sequencer_trace;
+  snitch_pkg::fpu_sb_trace_port_t fpu_sb_trace;
   // pragma translate_on
 
   logic  [2:0][4:0] ssr_raddr;
@@ -489,6 +490,7 @@ module snitch_cc #(
       // pragma translate_off
       .trace_port_o            ( fpu_trace           ),
       .sequencer_tracer_port_o ( fpu_sequencer_trace ),
+      .sb_tracer_port_o        ( fpu_sb_trace        ),
       // pragma translate_on
       .hart_id_i        ( hart_id_i      ),
       .acc_req_i        ( acc_snitch_req ),
@@ -846,6 +848,7 @@ module snitch_cc #(
     automatic snitch_pkg::snitch_trace_port_t extras_snitch;
     automatic snitch_pkg::fpu_trace_port_t extras_fpu;
     automatic snitch_pkg::fpu_sequencer_trace_port_t extras_fpu_seq_out;
+    automatic snitch_pkg::fpu_sb_trace_port_t extras_fpu_sb_out;
 
     if (rst_ni) begin
       extras_snitch = '{
@@ -894,6 +897,7 @@ module snitch_cc #(
         if (Xfrep) begin
           // Addenda to FPU extras iff popping sequencer
           extras_fpu_seq_out = fpu_sequencer_trace;
+          extras_fpu_sb_out = fpu_sb_trace;
         end
       end
 
@@ -931,6 +935,14 @@ module snitch_cc #(
             $fwrite(f, trace_entry);
           end
         end
+
+        if (extras_fpu_sb_out.push_valid_i || extras_fpu_sb_out.pop_valid_i) begin
+          $sformat(trace_entry, "%t %1d %8d 0x%h DASM(%h) #; %s\n",
+              $time, cycle, i_snitch.priv_lvl_q, 32'hz, 64'hz,
+              snitch_pkg::print_fpu_sb_trace(extras_fpu_sb_out));
+          $fwrite(f, trace_entry);
+        end
+
       end
     end else begin
       cycle = '0;

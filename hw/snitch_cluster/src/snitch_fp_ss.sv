@@ -41,6 +41,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
   // pragma translate_off
   output fpu_trace_port_t  trace_port_o,
   output fpu_sequencer_trace_port_t sequencer_tracer_port_o,
+  output fpu_sb_trace_port_t sb_tracer_port_o,
   // pragma translate_on
   input  logic [31:0]      hart_id_i,
   // Accelerator Interface - Slave
@@ -77,6 +78,8 @@ module snitch_fp_ss import snitch_pkg::*; #(
   output core_events_t core_events_o
 );
 
+  localparam ScoreboardDepth = 5;
+
   fpnew_pkg::operation_e  fpu_op;
   fpnew_pkg::roundmode_e  fpu_rnd_mode;
   fpnew_pkg::fp_format_e  src_fmt, dst_fmt;
@@ -93,6 +96,9 @@ module snitch_fp_ss import snitch_pkg::*; #(
   logic [0:0]           fpr_wvalid;
   logic [0:0]           fpr_wready;
 
+  logic [ScoreboardDepth-1:0] fpr_windex;
+  logic [0:0]                 sb_pop_valid;
+
   logic ssr_active_d, ssr_active_q, ssr_active_ena;
   `FFLAR(ssr_active_q, Xssr & ssr_active_d, ssr_active_ena, 1'b0, clk_i, rst_i)
 
@@ -100,8 +106,16 @@ module snitch_fp_ss import snitch_pkg::*; #(
     logic       ssr; // write-back to SSR at rd
     logic       acc; // write-back to result bus
     logic [4:0] rd;  // write-back to floating point regfile
+    logic [ScoreboardDepth-1:0] fpr_windex;
   } tag_t;
   tag_t fpu_tag_in, fpu_tag_out;
+  tag_t lsu_tag_in, lsu_tag_out;
+
+  // scoreboard
+  logic [ScoreboardDepth-1:0] rd_index;
+  logic [3:0][4:0] sb_tests;
+  logic [3:0] sb_collision;
+  logic sb_full;
 
   logic use_fpu;
   logic [2:0][FLEN-1:0] op;
@@ -110,14 +124,13 @@ module snitch_fp_ss import snitch_pkg::*; #(
   logic        lsu_qready;
   logic        lsu_qvalid;
   logic [FLEN-1:0] ld_result;
-  logic [4:0]  lsu_rd;
   logic        lsu_pvalid;
   logic        lsu_pready;
   logic is_store, is_load;
 
-  logic [31:0] sb_d, sb_q;
+  // logic [31:0] sb_d, sb_q;
   logic rd_is_fp;
-  `FFAR(sb_q, sb_d, '0, clk_i, rst_i)
+  // `FFAR(sb_q, sb_d, '0, clk_i, rst_i)
 
   logic csr_instr;
 
@@ -201,6 +214,9 @@ module snitch_fp_ss import snitch_pkg::*; #(
     assign acc_req = acc_req_i;
   end
 
+  logic seq_valid;
+  assign acc_req_valid_q = seq_valid & ~sb_full;
+
   // Optional spill-register
   spill_register  #(
     .T      ( acc_req_t                           ),
@@ -211,9 +227,28 @@ module snitch_fp_ss import snitch_pkg::*; #(
     .valid_i ( acc_req_valid   ),
     .ready_o ( acc_req_ready   ),
     .data_i  ( acc_req         ),
-    .valid_o ( acc_req_valid_q ),
+    .valid_o ( seq_valid ),
     .ready_i ( acc_req_ready_q ),
     .data_o  ( acc_req_q       )
+  );
+
+  assign sb_tests = {fpr_raddr[0], fpr_raddr[1], fpr_raddr[2], rd};
+  snitch_sb #(
+    .AddrWidth(5),
+    .Depth(ScoreboardDepth),
+    .NumTestAddrs(4)
+  ) i_sb (
+    .clk_i,
+    .rst_i,
+    .push_rd_addr_i(rd),
+    .push_valid_i(acc_req_valid_q & acc_req_ready_q & ~sb_full & rd_is_fp),
+    .entry_index_o(rd_index),
+    .pop_index_i(fpr_windex),
+    .pop_valid_i(sb_pop_valid),
+    .test_addr_i(sb_tests),
+    .test_addr_present_o(sb_collision),
+    .full_o(sb_full),
+    .trace_port_o(sb_tracer_port_o)
   );
 
   // Ensure SSR CSR only written on instruction commit
@@ -221,7 +256,54 @@ module snitch_fp_ss import snitch_pkg::*; #(
 
   // this handles WAW Hazards - Potentially this can be relaxed if necessary
   // at the expense of increased timing pressure
-  assign dst_ready = ~(rd_is_fp & sb_q[rd]);
+  // assign dst_ready = ~(rd_is_fp & sb_q[rd]);
+  assign dst_ready = ~(rd_is_fp & sb_collision[3]);
+
+  always_ff @(posedge clk_i) begin
+    if (hart_id_i == 0) begin
+      // if (fpu_in_valid & fpu_in_ready) begin
+      //   $display("%t IN: fpu tag rd: %d", $time, fpu_tag_in.rd);
+      //   $display("%t IN: rd: %d", $time, rd);
+      //   $display("%t IN: rd index: %d", $time, rd_index);
+      // end
+      // if (fpu_out_valid & fpu_out_ready) begin
+      //   $display("%t OUT: fpu tag rd: %d", $time, fpu_tag_out.rd);
+      //   $display("%t OUT: waddr: %d", $time, fpr_waddr);
+      //   $display("%t OUT: windex: %d", $time, fpr_windex);
+      // end
+      // $display("*** Pre SB signals:");
+      // $display("acc_req_valid: %d", acc_req_valid);
+      // $display("acc_req_ready: %d", acc_req_ready);
+      // $display("acc_req_valid_q: %d", acc_req_valid_q);
+      // $display("acc_req_ready_q: %d", acc_req_ready_q);
+      // $display("*** SB signals:");
+      // $display("sb_collision: %d, %d, %d, %d", sb_collision[0], sb_collision[1], sb_collision[2], sb_collision[3]);
+      // $display("rd_is_fp: %d", rd_is_fp);
+      // $display("pop index: %b", fpr_windex);
+      // $display("sb out index: %b", rd_index);
+      // $display("push_valid_i: %d", acc_req_valid_q & acc_req_ready_q & rd_is_fp);
+      // $display("rd: %d", rd);
+      // $display("seq_valid: %d", seq_valid);
+      // $display("free_slots: %d", i_sb.i_indices.usage_o);
+      // $display("fifo read pointer: %d", i_sb.i_indices.read_pointer_q);
+      // $display("fifo read value: %b", i_sb.i_indices.data_o);
+      // $display("fifo %b %b %b %b %b", i_sb.i_indices.mem_q[0], i_sb.i_indices.mem_q[1], i_sb.i_indices.mem_q[2], i_sb.i_indices.mem_q[3], i_sb.i_indices.mem_q[4]);    
+      // $display("occupied: %b", i_sb.occupied);
+      // $display("sb_tests: %d, %d, %d, %d", sb_tests[0], sb_tests[1], sb_tests[2], sb_tests[3]);
+      // $display("sb_full: %d", sb_full);
+      // $display("sb_pop_valid: %d", sb_pop_valid);
+      // $display("*** EX signals:");
+      // $display("op_ready: %d, %d, %d", op_ready[0], op_ready[1], op_ready[2]);
+      // $display("use_fpu: %d", use_fpu);
+      // $display("fpu_in_valid: %d", fpu_in_valid);
+      // $display("fpu_in_ready: %d", fpu_in_ready);
+      // $display("lsu_qvalid: %d", lsu_qvalid);
+      // $display("lsu_qready: %d", lsu_qready);
+      // $display("dst_ready: %d", dst_ready);
+      // $display("op_select: %d, %d, %d", op_select[0], op_select[1], op_select[2]);
+      // $display("---");
+    end
+  end
 
   // check that either:
   // 1. The FPU and all operands are ready
@@ -229,7 +311,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
   // 3. The regfile operand is ready
   assign fpu_in_valid = use_fpu & acc_req_valid_q & (&op_ready) & dst_ready;
                                       // FPU ready
-  assign acc_req_ready_q = dst_ready & ((fpu_in_ready & fpu_in_valid)
+  assign acc_req_ready_q = ~(sb_full & rd_is_fp) & dst_ready & ((fpu_in_ready & fpu_in_valid)
                                       // Load/Store
                                       | (lsu_qvalid & lsu_qready)
                                       | csr_instr
@@ -256,17 +338,17 @@ module snitch_fp_ss import snitch_pkg::*; #(
 
   // Scoreboard/Operand Valid
   // Track floating point destination registers
-  always_comb begin
-    sb_d = sb_q;
-    // if the instruction is going to write the FPR mark it
-    if (acc_req_valid_q & acc_req_ready_q & rd_is_fp) sb_d[rd] = 1'b1;
-    // reset the value if we are committing the register
-    if (fpr_we) sb_d[fpr_waddr] = 1'b0;
-    // don't track any dependencies for SSRs if enabled
-    if (ssr_active_q) begin
-      for (int i = 0; i < NumSsrs; i++) sb_d[SsrRegs[i]] = 1'b0;
-    end
-  end
+  // always_comb begin
+  //   sb_d = sb_q;
+  //   // if the instruction is going to write the FPR mark it
+  //   if (acc_req_valid_q & acc_req_ready_q & rd_is_fp) sb_d[rd] = 1'b1;
+  //   // reset the value if we are committing the register
+  //   if (fpr_we) sb_d[fpr_waddr] = 1'b0;
+  //   // don't track any dependencies for SSRs if enabled
+  //   if (ssr_active_q) begin
+  //     for (int i = 0; i < NumSsrs; i++) sb_d[SsrRegs[i]] = 1'b0;
+  //   end
+  // end
 
   // Determine whether destination register is SSR
   logic is_rd_ssr;
@@ -300,8 +382,12 @@ module snitch_fp_ss import snitch_pkg::*; #(
     op_mode = 1'b0;
 
     fpu_tag_in.rd = rd;
+    fpu_tag_in.fpr_windex = rd_index;
     fpu_tag_in.acc = 1'b0; // RD is on accelerator bus
     fpu_tag_in.ssr = ssr_active_q & is_rd_ssr;
+
+    lsu_tag_in.rd = rd;
+    lsu_tag_in.fpr_windex = rd_index;
 
     is_store = 1'b0;
     is_load = 1'b0;
@@ -2471,7 +2557,8 @@ module snitch_fp_ss import snitch_pkg::*; #(
           op[i] = ssr_rvalid_o[i] ? ssr_rdata_i[i] : fpr_rdata[i];
           // the operand is ready if it is not marked in the scoreboard
           // and in case of it being an SSR it need to be ready as well
-          op_ready[i] = ~sb_q[fpr_raddr[i]] & (~ssr_rvalid_o[i] | ssr_rready_i[i]);
+          // op_ready[i] = ~sb_q[fpr_raddr[i]] & (~ssr_rvalid_o[i] | ssr_rready_i[i]);
+          op_ready[i] = ~sb_collision[i] & (~ssr_rvalid_o[i] | ssr_rready_i[i]);
           // Replicate if needed
           if (op_select[i] == RegBRep) begin
             unique case (src_fmt)
@@ -2496,6 +2583,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
   // Floating Point Unit
   // ----------------------
   snitch_fpu #(
+    .tag_t   ( tag_t   ),
     .RVF     ( RVF     ),
     .RVD     ( RVD     ),
     .XF16    ( XF16    ),
@@ -2544,6 +2632,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
     fpr_wready = 1'b1;
     ssr_wvalid_o = 1'b0;
     ssr_wdone_o = 1'b1;
+    sb_pop_valid = 1'b0;
     // the accelerator master wants to write
     if (acc_req_valid_q && result_select == ResAccBus) begin
       fpr_we = 1'b1;
@@ -2566,14 +2655,18 @@ module snitch_fp_ss import snitch_pkg::*; #(
       end
       fpr_wdata = fpu_result;
       fpr_waddr = fpu_tag_out.rd;
+      fpr_windex = fpu_tag_out.fpr_windex;
       fpr_wvalid = 1'b1;
+      sb_pop_valid = fpu_out_ready;
     end else if (lsu_pvalid) begin
       lsu_pready = 1'b1;
       fpr_we = 1'b1;
       fpr_wdata = ld_result;
-      fpr_waddr = lsu_rd;
+      fpr_waddr = lsu_tag_out.rd;
+      fpr_windex = lsu_tag_out.fpr_windex;
       fpr_wvalid = 1'b1;
       fpr_wready = 1'b0;
+      sb_pop_valid = lsu_pready;
     end
   end
 
@@ -2587,14 +2680,14 @@ module snitch_fp_ss import snitch_pkg::*; #(
     .DataWidth (DataWidth),
     .dreq_t (dreq_t),
     .drsp_t (drsp_t),
-    .tag_t (logic [4:0]),
+    .tag_t (tag_t),
     .NumOutstandingMem (NumFPOutstandingMem),
     .NumOutstandingLoads (NumFPOutstandingLoads),
     .NaNBox (1'b1)
   ) i_snitch_lsu (
     .clk_i (clk_i),
     .rst_i (rst_i),
-    .lsu_qtag_i (rd),
+    .lsu_qtag_i (lsu_tag_in),
     .lsu_qwrite_i (is_store),
     .lsu_qsigned_i (1'b1), // all floating point loads are signed
     .lsu_qaddr_i (acc_req_q.data_argc[AddrWidth-1:0]),
@@ -2604,7 +2697,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
     .lsu_qvalid_i (lsu_qvalid),
     .lsu_qready_o (lsu_qready),
     .lsu_pdata_o (ld_result),
-    .lsu_ptag_o (lsu_rd),
+    .lsu_ptag_o (lsu_tag_out),
     .lsu_perror_o (), // ignored for the moment
     .lsu_pvalid_o (lsu_pvalid),
     .lsu_pready_i (lsu_pready),
@@ -2660,10 +2753,11 @@ module snitch_fp_ss import snitch_pkg::*; #(
   assign trace_port_o.is_load      = is_load;
   assign trace_port_o.is_store     = is_store;
   assign trace_port_o.lsu_qaddr    = i_snitch_lsu.lsu_qaddr_i;
-  assign trace_port_o.lsu_rd       = lsu_rd;
+  assign trace_port_o.lsu_rd       = lsu_tag_out.rd;
   assign trace_port_o.acc_wb_ready = (result_select == ResAccBus);
   assign trace_port_o.fpu_out_acc  = fpu_tag_out.acc;
-  assign trace_port_o.fpr_waddr    = fpr_waddr[0];
+  assign trace_port_o.fpu_out_rd   = fpu_tag_out.rd;
+  assign trace_port_o.fpr_waddr    = fpr_waddr;
   assign trace_port_o.fpr_wdata    = fpr_wdata[0];
   assign trace_port_o.fpr_we       = fpr_we[0];
   // pragma translate_on

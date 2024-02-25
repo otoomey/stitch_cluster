@@ -179,7 +179,8 @@ package snitch_pkg;
   typedef enum logic [1:0] {
     SrcSnitch =  0,
     SrcFpu = 1,
-    SrcFpuSeq = 2
+    SrcFpuSeq = 2,
+    SrcFpuSB = 3
   } trace_src_e;
 
   typedef struct packed {
@@ -284,6 +285,7 @@ package snitch_pkg;
     longint lsu_rd;
     longint acc_wb_ready;
     longint fpu_out_acc;
+    longint fpu_out_rd;
     longint fpr_waddr;
     longint fpr_wdata;
     longint fpr_we;
@@ -322,6 +324,7 @@ package snitch_pkg;
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "lsu_rd", fpu_trace.lsu_rd);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "acc_wb_ready", fpu_trace.acc_wb_ready);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "fpu_out_acc", fpu_trace.fpu_out_acc);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "fpu_out_rd", fpu_trace.fpu_out_rd);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "fpr_waddr", fpu_trace.fpr_waddr);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "fpr_wdata", fpu_trace.fpr_wdata);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "fpr_we", fpu_trace.fpr_we);
@@ -351,6 +354,33 @@ package snitch_pkg;
     extras_str = $sformatf("%s}", extras_str);
     return extras_str;
   endfunction
+
+  typedef struct packed {
+    longint source;
+    longint push_rd_addr_i;
+    longint push_valid_i;
+    longint entry_index_o;
+    longint pop_index_i;
+    longint pop_valid_i;
+    longint test_addr_i;
+    longint test_addr_present_o;
+    longint full_o;
+  } fpu_sb_trace_port_t;
   // pragma translate_on
+
+  function automatic string print_fpu_sb_trace(fpu_sb_trace_port_t fpu_sb);
+    string extras_str = "{";
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "source", fpu_sb.source);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "push_rd_addr_i", fpu_sb.push_rd_addr_i);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "push_valid_i", fpu_sb.push_valid_i);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "entry_index_o", fpu_sb.entry_index_o);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "pop_index_i", fpu_sb.pop_index_i);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "pop_valid_i", fpu_sb.pop_valid_i);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "test_addr_i", fpu_sb.test_addr_i);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "test_addr_present_o", fpu_sb.test_addr_present_o);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "full_o", fpu_sb.full_o);
+    extras_str = $sformatf("%s}", extras_str);
+    return extras_str;
+  endfunction
 
 endpackage

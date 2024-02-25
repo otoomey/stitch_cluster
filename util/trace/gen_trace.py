@@ -53,7 +53,7 @@ REG_ABI_NAMES_F = (*('ft{}'.format(i) for i in range(0, 8)), 'fs0', 'fs1',
                      for i in range(2, 12)), *('ft{}'.format(i)
                                                for i in range(8, 12)))
 
-TRACE_SRCES = {'snitch': 0, 'fpu': 1, 'sequencer': 2}
+TRACE_SRCES = {'snitch': 0, 'fpu': 1, 'sequencer': 2, 'scoreboard': 3}
 
 LS_SIZES = ('Byte', 'Half', 'Word', 'Doub')
 
@@ -682,6 +682,8 @@ def annotate_insn(
                 ])
             else:
                 insn, pc_str, annot = ('', '', '')
+        elif extras['source'] == TRACE_SRCES['scoreboard']:
+            annot = '<scoreboard>'
         # Annotate FPSS
         elif extras['source'] == TRACE_SRCES['fpu']:
             annot_list = []
