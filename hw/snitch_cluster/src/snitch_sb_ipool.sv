@@ -3,7 +3,7 @@ module snitch_sb_ipool #(
     parameter int unsigned Depth        = 8,    // depth can be arbitrary from 0 to 2**32
     parameter [Depth-1:0] ResetState [Depth-1:0] = '0,
     // DO NOT OVERWRITE THIS PARAMETER
-    parameter type dtype                = logic [Depth-1:0],
+    parameter type dtype                = logic [$clog2(Depth)-1:0],
     parameter int unsigned AddrDepth   = (Depth > 1) ? $clog2(Depth) : 1
 )(
     input  logic  clk_i,                // Clock
@@ -102,7 +102,7 @@ module snitch_sb_ipool #(
     for (genvar i = 0; i < Depth; i++) begin
         always_ff @(posedge clk_i or negedge rst_ni) begin
             if(~rst_ni) begin
-                mem_q[i] <= 1 << i;
+                mem_q[i] <= i;
             end else if (!gate_clock) begin
                 mem_q[i] <= mem_n[i];
             end
@@ -112,8 +112,8 @@ module snitch_sb_ipool #(
     // needed for simulation
     for (genvar i = 0; i < Depth; i++) begin
         initial begin
+            mem_q[i] = i;
             read_pointer_q = '0;
-            mem_q[i] = 1 << i;
             write_pointer_q = '0;
             status_cnt_q    = FifoDepth[AddrDepth:0];
             // $display("mem_q[%d]=%d", i, mem_q[i]);

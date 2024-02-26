@@ -20,10 +20,13 @@ module snitch_sb import snitch_pkg::*; #(
     output fpu_sb_trace_port_t          trace_port_o
 );
 
-    addr_t [Depth-1:0] scoreboard;
-    logic [Depth-1:0] occupied;
-    logic [Depth-1:0] next_index;
+    addr_t [Depth-1:0] scoreboard_q, scoreboard_d;
+    logic [Depth-1:0] occupied_q, occupied_d;
+    logic [AddrWidth-1:0] next_index;
     logic [NumTestAddrs-1:0][Depth-1:0] test_checks;
+
+    `FFAR(scoreboard_q, scoreboard_d, '0, clk_i, rst_i)
+    `FFAR(occupied_q, occupied_d, '0, clk_i, rst_i)
 
     // keep track of which indices in the scoreboard are free
     snitch_sb_ipool #(
@@ -41,39 +44,31 @@ module snitch_sb import snitch_pkg::*; #(
     );
 
     // write logic
+    always_comb begin
+        occupied_d = occupied_q;
+        scoreboard_d = scoreboard_q;
+        if (push_valid_i) begin
+            scoreboard_d[next_index] = push_rd_addr_i;
+            occupied_d[next_index] = 1;
+        end
+        if (pop_valid_i) begin
+            occupied_d[pop_index_i] = 0;
+        end
+    end
+
     always_ff @(posedge clk_i) begin
-        if (full_o && push_valid_i) begin
-            $display("Warning! attempted to push when full: %d->%b", push_rd_addr_i, next_index);
+        if (push_valid_i & occupied_q[next_index]) begin
+            $display("Warning! attempted to push to occupied address: %d->%d", push_rd_addr_i, next_index);
         end
-        if (i_indices.usage_o == Depth & pop_valid_i) begin
-            $display("Warning! attempted to pop when empty: %b", pop_index_i);
-        end
-        for (int unsigned i = 0; i < Depth; i++) begin
-            if (push_valid_i & next_index[i]) begin
-                if (occupied[i]) begin
-                    $display("Warning! attempted to push to occupied address");
-                end
-                // $display("Pushing %d to index %d", push_rd_addr_i, i);
-                scoreboard[i] <= push_rd_addr_i;
-                occupied[i] <= 1;
-            end
-            if (pop_valid_i & pop_index_i[i]) begin
-                if (occupied[i] != 1) begin
-                    $display("Warning! attempted to clear free address");
-                end
-                occupied[i] <= 0;
-                // $display("Popping index %d", i);
-            end
-            // $display("test checks %d: %x", i, test_checks[i]);
-            // $display("mem %d: %x", i, scoreboard[i]);
-            // $display("occ %d: %x", i, occupied[i]);
+        if (pop_valid_i & ~occupied_q[pop_index_i]) begin
+            $display("Warning! attempted to pop unoccupied address: %d", pop_index_i);
         end
     end
 
     // test logic
     for (genvar j = 0; j < NumTestAddrs; j++) begin
         for (genvar i = 0; i < Depth; i++) begin
-            assign test_checks[j][i] = (scoreboard[i] == test_addr_i[j]) & occupied[i];
+            assign test_checks[j][i] = (scoreboard_q[i] == test_addr_i[j]) & occupied_q[i];
         end
     end
 

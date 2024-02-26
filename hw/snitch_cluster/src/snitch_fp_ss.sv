@@ -232,7 +232,11 @@ module snitch_fp_ss import snitch_pkg::*; #(
     .data_o  ( acc_req_q       )
   );
 
-  assign sb_tests = {fpr_raddr[0], fpr_raddr[1], fpr_raddr[2], rd};
+  assign sb_tests[0] = fpr_raddr[0];
+  assign sb_tests[1] = fpr_raddr[1];
+  assign sb_tests[2] = fpr_raddr[2];
+  assign sb_tests[3] = rd;
+  // assign sb_tests = {rd, fpr_raddr[2], fpr_raddr[1], fpr_raddr[0]};
   snitch_sb #(
     .AddrWidth(5),
     .Depth(ScoreboardDepth),
