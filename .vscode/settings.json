@@ -1,0 +1,13 @@
+{
+    "verilog.linting.linter": "verilator",
+    "verilog.linting.verilator.arguments": "-f /workspaces/stitch_cluster/.vscode/linter.vc",
+    "systemverilog.linter": "verilator",
+    "systemverilog.includeIndexing": [
+        "**/*.{sv,svh}", "./.bender/git/checkouts/**/*.{sv,svh}"
+    ],
+    "triggerTaskOnSave.tasks": { 
+        "lint" : [
+            "*.{sv,svh}"
+        ]
+    }
+}

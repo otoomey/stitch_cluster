@@ -1,0 +1,134 @@
+-v /workspaces/stitch_cluster/.bender/git/checkouts/axi-b118383cbcd3267b/src/axi_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/src/cf_math_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/common_verification-4a043b2da8baa62f/src/rand_id_queue.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/src/cf_math_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/src/dm_pkg.sv
+-v /workspaces/stitch_cluster/hw/reqrsp_interface/src/reqrsp_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/apb-856f26900b176af1/src/apb_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/apb-856f26900b176af1/src/apb_test.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/axi-b118383cbcd3267b/src/axi_test.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/src/cb_filter_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/src/cdc_reset_ctrlr_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/src/ecc_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/common_verification-4a043b2da8baa62f/src/rand_verif_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/src/cb_filter_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/src/ecc_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/fpnew_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/fpu_div_sqrt_mvp/hdl/defs_div_sqrt_mvp.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/fpu_div_sqrt_mvp-1306d604c3b09069/hdl/defs_div_sqrt_mvp.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/register_interface-60fff8e94b3912d9/src/reg_test.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/src/dmi_test.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/tb/dm_tb_pkg.sv
+-v /workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/tb/jtag_dmi/jtag_test.sv
+-v /workspaces/stitch_cluster/hw/future/src/idma_reg64_frontend_reg_pkg.sv
+-v /workspaces/stitch_cluster/hw/mem_interface/src/mem_test.sv
+-v /workspaces/stitch_cluster/hw/reqrsp_interface/src/reqrsp_test.sv
+-v /workspaces/stitch_cluster/hw/snitch_cluster/src/snitch_cluster_peripheral/snitch_cluster_peripheral_reg_pkg.sv
+-v /workspaces/stitch_cluster/hw/snitch_dma/src/axi_dma_pkg.sv
+-v /workspaces/stitch_cluster/hw/snitch_icache/src/snitch_icache_pkg.sv
+-v /workspaces/stitch_cluster/hw/snitch_ipu/src/snitch_ipu_pkg.sv
+-v /workspaces/stitch_cluster/hw/snitch_ssr/src/snitch_ssr_pkg.sv
+-v /workspaces/stitch_cluster/hw/snitch/src/riscv_instr.sv
+-v /workspaces/stitch_cluster/hw/snitch/src/snitch_pkg.sv
+-v /workspaces/stitch_cluster/hw/snitch/src/snitch_pma_pkg.sv
+-v /workspaces/stitch_cluster/hw/tcdm_interface/src/tcdm_test.sv
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/apb-856f26900b176af1/include/apb
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/apb-856f26900b176af1/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/axi_riscv_atomics-baa633fa798ef2d4/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/axi-b118383cbcd3267b/include/axi
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/axi-b118383cbcd3267b/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/formal
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/include/common_cells
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/src/deprecated
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_verification-4a043b2da8baa62f/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/formal
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/include/common_cells
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/src/deprecated
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/fpu_div_sqrt_mvp/hdl
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpu_div_sqrt_mvp-1306d604c3b09069/hdl
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/register_interface-60fff8e94b3912d9/include/register_interface
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/register_interface-60fff8e94b3912d9/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/register_interface-60fff8e94b3912d9/src/deprecated
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/register_interface-60fff8e94b3912d9/vendor/lowrisc_opentitan/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/debug_rom
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/sva
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/tb
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/tb/jtag_dmi
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/tb/unused
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/tech_cells_generic-1f8dc0ac09119c64/src/deprecated
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/tech_cells_generic-1f8dc0ac09119c64/src/fpga
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/tech_cells_generic-1f8dc0ac09119c64/src/rtl
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/tech_cells_generic-1f8dc0ac09119c64/src
++incdir+/workspaces/stitch_cluster/hw/future/src
++incdir+/workspaces/stitch_cluster/hw/future/src/dma
++incdir+/workspaces/stitch_cluster/hw/mem_interface/include/mem_interface
++incdir+/workspaces/stitch_cluster/hw/mem_interface/src
++incdir+/workspaces/stitch_cluster/hw/reqrsp_interface/include/reqrsp_interface
++incdir+/workspaces/stitch_cluster/hw/reqrsp_interface/src
++incdir+/workspaces/stitch_cluster/hw/snitch_cluster/src
++incdir+/workspaces/stitch_cluster/hw/snitch_cluster/src/snitch_cluster_peripheral
++incdir+/workspaces/stitch_cluster/hw/snitch_dma/src
++incdir+/workspaces/stitch_cluster/hw/snitch_icache/src
++incdir+/workspaces/stitch_cluster/hw/snitch_ipu/src
++incdir+/workspaces/stitch_cluster/hw/snitch_ssr/include/snitch_ssr
++incdir+/workspaces/stitch_cluster/hw/snitch_ssr/src
++incdir+/workspaces/stitch_cluster/hw/snitch_vm/src
++incdir+/workspaces/stitch_cluster/hw/snitch/include/snitch_vm
++incdir+/workspaces/stitch_cluster/hw/snitch/src
++incdir+/workspaces/stitch_cluster/hw/tcdm_interface/include/tcdm_interface
++incdir+/workspaces/stitch_cluster/hw/tcdm_interface/src
++incdir+/workspaces/stitch_cluster/target/snitch_cluster/generated
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/apb-856f26900b176af1/include/apb
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/apb-856f26900b176af1/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/axi_riscv_atomics-baa633fa798ef2d4/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/axi-b118383cbcd3267b/include/axi
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/axi-b118383cbcd3267b/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/formal
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/include/common_cells
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_cells-dd89ab0d1382ef18/src/deprecated
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/common_verification-4a043b2da8baa62f/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/formal
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/include/common_cells
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/common_cells/src/deprecated
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpnew-c39622606dc54218/src/fpu_div_sqrt_mvp/hdl
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/fpu_div_sqrt_mvp-1306d604c3b09069/hdl
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/register_interface-60fff8e94b3912d9/include/register_interface
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/register_interface-60fff8e94b3912d9/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/register_interface-60fff8e94b3912d9/src/deprecated
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/register_interface-60fff8e94b3912d9/vendor/lowrisc_opentitan/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/debug_rom
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/src
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/sva
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/tb
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/tb/jtag_dmi
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/riscv-dbg-a94d1f103a4057c9/tb/unused
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/tech_cells_generic-1f8dc0ac09119c64/src/deprecated
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/tech_cells_generic-1f8dc0ac09119c64/src/fpga
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/tech_cells_generic-1f8dc0ac09119c64/src/rtl
++incdir+/workspaces/stitch_cluster/.bender/git/checkouts/tech_cells_generic-1f8dc0ac09119c64/src
++incdir+/workspaces/stitch_cluster/hw/future/src
++incdir+/workspaces/stitch_cluster/hw/future/src/dma
++incdir+/workspaces/stitch_cluster/hw/mem_interface/include/mem_interface
++incdir+/workspaces/stitch_cluster/hw/mem_interface/src
++incdir+/workspaces/stitch_cluster/hw/reqrsp_interface/include/reqrsp_interface
++incdir+/workspaces/stitch_cluster/hw/reqrsp_interface/src
++incdir+/workspaces/stitch_cluster/hw/snitch_cluster/src
++incdir+/workspaces/stitch_cluster/hw/snitch_cluster/src/snitch_cluster_peripheral
++incdir+/workspaces/stitch_cluster/hw/snitch_dma/src
++incdir+/workspaces/stitch_cluster/hw/snitch_icache/src
++incdir+/workspaces/stitch_cluster/hw/snitch_ipu/src
++incdir+/workspaces/stitch_cluster/hw/snitch_ssr/include/snitch_ssr
++incdir+/workspaces/stitch_cluster/hw/snitch_ssr/src
++incdir+/workspaces/stitch_cluster/hw/snitch_vm/src
++incdir+/workspaces/stitch_cluster/hw/snitch/include/snitch_vm
++incdir+/workspaces/stitch_cluster/hw/snitch/src
++incdir+/workspaces/stitch_cluster/hw/tcdm_interface/include/tcdm_interface
++incdir+/workspaces/stitch_cluster/hw/tcdm_interface/src
++incdir+/workspaces/stitch_cluster/target/snitch_cluster/generated
