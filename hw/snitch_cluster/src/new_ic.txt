@@ -1,0 +1,715 @@
+[fesvr] Wrote 36 bytes of bootrom to 0x1000
+[fesvr] Wrote entry point 0x80000000 to bootloader slot 0x1020
+[fesvr] Wrote 56 bytes of bootdata to 0x1024
+xfrep: 011111111
+- ic: ByteOffset=         6, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+addr_width:         17, mem_coall:          2, ByteOffset:          3, SelWidth:          3
+mem_high_width:           9
+mem_low_width:           5
+mst addr width:          17
+payload addr width:          17
+vfpr mem addr width          9, data width         64
+mem req addr width:           9
+- ic: ByteOffset=         3, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+[Tracer] Logging Hart          8 to logs/trace_hart_00000008.dasm
+vfpr mem addr width          9, data width         64
+mem req addr width:           9
+- ic: ByteOffset=         3, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+[Tracer] Logging Hart          0 to logs/trace_hart_00000000.dasm
+vfpr mem addr width          9, data width         64
+mem req addr width:           9
+- ic: ByteOffset=         3, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+[Tracer] Logging Hart          1 to logs/trace_hart_00000001.dasm
+vfpr mem addr width          9, data width         64
+mem req addr width:           9
+- ic: ByteOffset=         3, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+[Tracer] Logging Hart          2 to logs/trace_hart_00000002.dasm
+vfpr mem addr width          9, data width         64
+mem req addr width:           9
+- ic: ByteOffset=         3, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+[Tracer] Logging Hart          3 to logs/trace_hart_00000003.dasm
+vfpr mem addr width          9, data width         64
+mem req addr width:           9
+- ic: ByteOffset=         3, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+[Tracer] Logging Hart          4 to logs/trace_hart_00000004.dasm
+vfpr mem addr width          9, data width         64
+mem req addr width:           9
+- ic: ByteOffset=         3, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+[Tracer] Logging Hart          5 to logs/trace_hart_00000005.dasm
+vfpr mem addr width          9, data width         64
+mem req addr width:           9
+- ic: ByteOffset=         3, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+[Tracer] Logging Hart          6 to logs/trace_hart_00000006.dasm
+vfpr mem addr width          9, data width         64
+mem req addr width:           9
+- ic: ByteOffset=         3, SelWidth=         2, InWidth=         17, MemAddrWidth=         9, RealAddrWidth=          9
+[Tracer] Logging Hart          7 to logs/trace_hart_00000007.dasm
+router: [ 0:1ffe8]->[ 7:03fe8] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+- router: response: 0000000001
+- ic response data:                   0
+router: [ 1:1ffe8]->[ 7:03fe8] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+- router: response: 0000000010
+- ic response data:                   0
+router: [ 2:1ffe8]->[ 7:03fe8] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+- router: response: 0000000100
+- ic response data:                   0
+router: [ 3:1ffe8]->[ 7:03fe8] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+- router: response: 0000001000
+- ic response data:                   0
+router: [ 4:1ffe8]->[ 7:03fe8] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+- router: response: 0000010000
+- ic response data:                   0
+router: [ 5:1ffe8]->[ 7:03fe8] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+- router: response: 0000100000
+- ic response data:                   0
+router: [ 6:1ffe8]->[ 7:03fe8] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+- router: response: 0001000000
+- ic response data:                   0
+router: [ 7:1ffe8]->[ 7:03fe8] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+- router: response: 0010000000
+- ic response data:                   0
+router: [ 8:1ffe8]->[ 7:03fe8] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 7:1e39c]->[ 4:03c7c] [ 3:1f3bc]->[ 5:03e7c] [ 0:1ffd4]->[ 6:03ff4] 
+- ic: [03c7c]->[3:01e]
+- ric: [ 0:03c7c]->[ 3:1e3] 
+- ic: [03e7c]->[3:01f]
+- ric: [ 0:03e7c]->[ 3:1f3] 
+- ic: [03ff4]->[2:01f]
+- ric: [ 0:03ff4]->[ 2:1ff] 
+router: [ 1:1fbcc]->[ 6:03f6c] 
+- router: response: 0010001001
+- ic response data:                   0
+- ic response data:                   0
+- ic: [03f6c]->[1:01f]
+- ic response data:                   0
+- ric: [ 0:03f6c]->[ 1:1fb] 
+router: [ 2:1f7c4]->[ 6:03ee4] 
+- router: response: 0000000010
+- ic: [03ee4]->[0:01f]
+- ic response data:                   0
+- ric: [ 0:03ee4]->[ 0:1f7] 
+router: [ 7:1e398]->[ 4:03c78] [ 3:1f3b8]->[ 5:03e78] [ 0:1ffd0]->[ 6:03ff0] 
+- router: response: 0000000100
+- ic: [03c78]->[3:01e]
+- ric: [ 0:03c78]->[ 3:1e3] 
+- ic: [03e78]->[3:01f]
+- ric: [ 0:03e78]->[ 3:1f3] 
+- ic: [03ff0]->[2:01f]
+- ic response data:                   0
+- ric: [ 0:03ff0]->[ 2:1ff] 
+router: [ 8:1df94]->[ 4:03bf4] [ 4:1efb4]->[ 5:03df4] [ 1:1fbc8]->[ 6:03f68] 
+- router: response: 0010001001
+- ic: [03bf4]->[2:01d]
+- ic response data:          3221225472
+- ric: [ 0:03bf4]->[ 2:1df] 
+- ic: [03df4]->[2:01e]
+- ic response data:          3221225472
+- ric: [ 0:03df4]->[ 2:1ef] 
+- ic: [03f68]->[1:01f]
+- ic response data:                   0
+- ric: [ 0:03f68]->[ 1:1fb] 
+router: [ 5:1ebac]->[ 5:03d6c] [ 2:1f7c0]->[ 6:03ee0] 
+- router: response: 0100010010
+- ic response data:                   0
+- ic: [03d6c]->[1:01e]
+- ic response data:                   0
+- ric: [ 0:03d6c]->[ 1:1eb] 
+- ic: [03ee0]->[0:01f]
+- ic response data:                   0
+- ric: [ 0:03ee0]->[ 0:1f7] 
+router: [ 6:1e7a4]->[ 5:03ce4] 
+- router: response: 0000100100
+- ic: [03ce4]->[0:01e]
+- ic response data:                   0
+- ric: [ 0:03ce4]->[ 0:1e7] 
+- ic response data:                   0
+router: [ 8:1df90]->[ 4:03bf0] [ 4:1efb0]->[ 5:03df0] 
+- router: response: 0001000000
+- ic: [03bf0]->[2:01d]
+- ric: [ 0:03bf0]->[ 2:1df] 
+- ic: [03df0]->[2:01e]
+- ic response data:                   0
+- ric: [ 0:03df0]->[ 2:1ef] 
+router: [ 5:1eba8]->[ 5:03d68] 
+- router: response: 0100010000
+- ic response data:                   0
+- ic: [03d68]->[1:01e]
+- ic response data:                   0
+- ric: [ 0:03d68]->[ 1:1eb] 
+router: [ 6:1e7a0]->[ 5:03ce0] 
+- router: response: 0000100000
+- ic: [03ce0]->[0:01e]
+- ic response data:                   0
+- ric: [ 0:03ce0]->[ 0:1e7] 
+- router: response: 0001000000
+- ic response data:                   0
+router: [ 8:1df8c]->[ 4:03bec] [ 4:1efac]->[ 5:03dec] [ 0:1ffcc]->[ 6:03fec] 
+- ic: [03bec]->[1:01d]
+- ric: [ 0:03bec]->[ 1:1df] 
+- ic: [03dec]->[1:01e]
+- ric: [ 0:03dec]->[ 1:1ef] 
+- ic: [03fec]->[1:01f]
+- ric: [ 0:03fec]->[ 1:1ff] 
+router: [ 6:1e79c]->[ 4:03cfc] [ 2:1f7bc]->[ 5:03efc] 
+- router: response: 0100010001
+- ic: [03cfc]->[3:01e]
+- ic response data:                   0
+- ric: [ 0:03cfc]->[ 3:1e7] 
+- ic: [03efc]->[3:01f]
+- ic response data:                   0
+- ric: [ 0:03efc]->[ 3:1f7] 
+- ic response data:                   0
+router: [ 7:1e394]->[ 4:03c74] [ 3:1f3b4]->[ 5:03e74] 
+- router: response: 0001000100
+- ic: [03c74]->[2:01e]
+- ic response data:          3221225472
+- ric: [ 0:03c74]->[ 2:1e3] 
+- ic: [03e74]->[2:01f]
+- ic response data:          3221225472
+- ric: [ 0:03e74]->[ 2:1f3] 
+router: [ 8:1df88]->[ 4:03be8] [ 4:1efa8]->[ 5:03de8] [ 0:1ffc8]->[ 6:03fe8] 
+- router: response: 0010001000
+- ic: [03be8]->[1:01d]
+- ic response data:                   0
+- ric: [ 0:03be8]->[ 1:1df] 
+- ic: [03de8]->[1:01e]
+- ic response data:                   0
+- ric: [ 0:03de8]->[ 1:1ef] 
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+router: [ 6:1e798]->[ 4:03cf8] [ 5:1eba4]->[ 5:03d64] [ 1:1fbc4]->[ 6:03f64] 
+- router: response: 0100010001
+- ic: [03cf8]->[3:01e]
+- ic response data:                   0
+- ric: [ 0:03cf8]->[ 3:1e7] 
+- ic: [03d64]->[0:01e]
+- ic response data:                   0
+- ric: [ 0:03d64]->[ 0:1eb] 
+- ic: [03f64]->[0:01f]
+- ic response data:                   0
+- ric: [ 0:03f64]->[ 0:1fb] 
+router: [ 7:1e390]->[ 4:03c70] [ 2:1f7b8]->[ 5:03ef8] 
+- router: response: 0001100010
+- ic: [03c70]->[2:01e]
+- ic response data:                   0
+- ric: [ 0:03c70]->[ 2:1e3] 
+- ic: [03ef8]->[3:01f]
+- ic response data:                   0
+- ric: [ 0:03ef8]->[ 3:1f7] 
+- ic response data:                   0
+router: [ 8:1df84]->[ 4:03be4] [ 3:1f3b0]->[ 5:03e70] 
+- router: response: 0010000100
+- ic: [03be4]->[0:01d]
+- ic response data:                   0
+- ric: [ 0:03be4]->[ 0:1df] 
+- ic: [03e70]->[2:01f]
+- ic response data:                   0
+- ric: [ 0:03e70]->[ 2:1f3] 
+router: [ 4:1efa4]->[ 5:03de4] [ 0:1ffc4]->[ 6:03fe4] 
+- router: response: 0100001000
+- ic response data:                   0
+- ic: [03de4]->[0:01e]
+- ic response data:                   0
+- ric: [ 0:03de4]->[ 0:1ef] 
+- ic: [03fe4]->[0:01f]
+- ric: [ 0:03fe4]->[ 0:1ff] 
+router: [ 6:1e794]->[ 4:03cf4] 
+- router: response: 0000010001
+- ic: [03cf4]->[2:01e]
+- ric: [ 0:03cf4]->[ 2:1e7] 
+- ic response data:                   0
+- ic response data:                   0
+router: [ 7:1e38c]->[ 4:03c6c] 
+- router: response: 0001000000
+- ic: [03c6c]->[1:01e]
+- ic response data:                   0
+- ric: [ 0:03c6c]->[ 1:1e3] 
+router: [ 5:1eba0]->[ 5:03d60] [ 1:1fbc0]->[ 6:03f60] 
+- router: response: 0010000000
+- ic response data:                   0
+- ic: [03d60]->[0:01e]
+- ric: [ 0:03d60]->[ 0:1eb] 
+- ic: [03f60]->[0:01f]
+- ric: [ 0:03f60]->[ 0:1fb] 
+router: [ 5:1eb9c]->[ 4:03d7c] [ 2:1f7b4]->[ 5:03ef4] 
+- router: response: 0000100010
+- ic: [03d7c]->[3:01e]
+- ric: [ 0:03d7c]->[ 3:1eb] 
+- ic: [03ef4]->[2:01f]
+- ic response data:                   0
+- ric: [ 0:03ef4]->[ 2:1f7] 
+- ic response data:                   0
+router: [ 3:1f3ac]->[ 5:03e6c] 
+- router: response: 0000100100
+- ic response data:                   0
+- ic: [03e6c]->[1:01f]
+- ic response data:                   0
+- ric: [ 0:03e6c]->[ 1:1f3] 
+router: [ 1:1fbbc]->[ 5:03f7c] 
+- router: response: 0000001000
+- ic: [03f7c]->[3:01f]
+- ic response data:                   0
+- ric: [ 0:03f7c]->[ 3:1fb] 
+- router: response: 0000000010
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df80]->[ 4:03be0] 
+- ic: [03be0]->[0:01d]
+- ric: [ 0:03be0]->[ 0:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 8:1df98]->[ 4:03bf8] [ 5:1ebb0]->[ 5:03d70] [ 1:1fbd0]->[ 6:03f70] 
+- ic: [03bf8]->[3:01d]
+- ric: [ 0:03bf8]->[ 3:1df] 
+- ic: [03d70]->[2:01e]
+- ric: [ 0:03d70]->[ 2:1eb] 
+- ic: [03f70]->[2:01f]
+- ric: [ 0:03f70]->[ 2:1fb] 
+router: [ 4:1efb8]->[ 5:03df8] [ 2:1f7c8]->[ 6:03ee8] 
+- router: response: 0100100010
+- ic response data:                   0
+- ic: [03df8]->[3:01e]
+- ic response data:                   0
+- ric: [ 0:03df8]->[ 3:1ef] 
+- ic: [03ee8]->[1:01f]
+- ic response data:                   0
+- ric: [ 0:03ee8]->[ 1:1f7] 
+router: [ 6:1e7a8]->[ 5:03ce8] [ 3:1f3c0]->[ 6:03e60] 
+- router: response: 0000010100
+- ic: [03ce8]->[1:01e]
+- ic response data:                   0
+- ric: [ 0:03ce8]->[ 1:1e7] 
+- ic: [03e60]->[0:01f]
+- ic response data:                   0
+- ric: [ 0:03e60]->[ 0:1f3] 
+router: [ 7:1e3a0]->[ 5:03c60] [ 0:1ffd8]->[ 6:03ff8] 
+- router: response: 0001001000
+- ic: [03c60]->[0:01e]
+- ic response data:                   0
+- ric: [ 0:03c60]->[ 0:1e3] 
+- ic: [03ff8]->[3:01f]
+- ic response data:                   0
+- ric: [ 0:03ff8]->[ 3:1ff] 
+- router: response: 0010000001
+- ic response data:                   0
+- ic response data:                   0
+- ric: [ 0:1ffc0]->[ 3:1ff] 
+router: [ 8:1df98]->[ 4:03bf8] 
+- ic: [03bf8]->[3:01d]
+- ric: [ 0:03bf8]->[ 3:1df] 
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 1:1fbbc]->[ 5:03f7c] 
+- ic: [03f7c]->[3:01f]
+- ric: [ 0:03f7c]->[ 3:1fb] 
+- router: response: 0000000010
+- ic response data:                   0
+router: [ 1:1fbc0]->[ 6:03f60] 
+- ic: [03f60]->[0:01f]
+- ric: [ 0:03f60]->[ 0:1fb] 
+- router: response: 0000000010
+- ic response data:                   0
+router: [ 1:1fbc4]->[ 6:03f64] 
+- ic: [03f64]->[0:01f]
+- ric: [ 0:03f64]->[ 0:1fb] 
+router: [ 3:1f3ac]->[ 5:03e6c] 
+- router: response: 0000000010
+- ic: [03e6c]->[1:01f]
+- ric: [ 0:03e6c]->[ 1:1f3] 
+- ic response data:                   0
+router: [ 2:1f7b4]->[ 5:03ef4] 
+- router: response: 0000001000
+- ic: [03ef4]->[2:01f]
+- ic response data:                   0
+- ric: [ 0:03ef4]->[ 2:1f7] 
+- router: response: 0000000100
+- ic response data:                   0
+router: [ 1:1fbc8]->[ 6:03f68] 
+- ic: [03f68]->[1:01f]
+- ric: [ 0:03f68]->[ 1:1fb] 
+router: [ 3:1f3b0]->[ 5:03e70] 
+- router: response: 0000000010
+- ic: [03e70]->[2:01f]
+- ric: [ 0:03e70]->[ 2:1f3] 
+- ic response data:                   0
+router: [ 2:1f7b8]->[ 5:03ef8] 
+- router: response: 0000001000
+- ic: [03ef8]->[3:01f]
+- ic response data:                   0
+- ric: [ 0:03ef8]->[ 3:1f7] 
+- router: response: 0000000100
+- ic response data:          1610612736
+router: [ 1:1fbcc]->[ 6:03f6c] 
+- ic: [03f6c]->[1:01f]
+- ric: [ 0:03f6c]->[ 1:1fb] 
+router: [ 3:1f3b4]->[ 5:03e74] 
+- router: response: 0000000010
+- ic: [03e74]->[2:01f]
+- ric: [ 0:03e74]->[ 2:1f3] 
+- ic response data:                   0
+router: [ 2:1f7bc]->[ 5:03efc] 
+- router: response: 0000001000
+- ic: [03efc]->[3:01f]
+- ic response data:                   0
+- ric: [ 0:03efc]->[ 3:1f7] 
+router: [ 4:1efa4]->[ 5:03de4] 
+- router: response: 0000000100
+- ic: [03de4]->[0:01e]
+- ic response data:                   0
+- ric: [ 0:03de4]->[ 0:1ef] 
+router: [ 5:1eb9c]->[ 4:03d7c] 
+- router: response: 0000010000
+- ic: [03d7c]->[3:01e]
+- ric: [ 0:03d7c]->[ 3:1eb] 
+- ic response data:                   0
+router: [ 3:1f3b8]->[ 5:03e78] 
+- router: response: 0000100000
+- ic response data:                   0
+- ic: [03e78]->[3:01f]
+- ric: [ 0:03e78]->[ 3:1f3] 
+router: [ 2:1f7c0]->[ 6:03ee0] 
+- router: response: 0000001000
+- ic response data:                   0
+- ic: [03ee0]->[0:01f]
+- ric: [ 0:03ee0]->[ 0:1f7] 
+router: [ 4:1efa8]->[ 5:03de8] 
+- router: response: 0000000100
+- ic: [03de8]->[1:01e]
+- ric: [ 0:03de8]->[ 1:1ef] 
+- ic response data:                   0
+router: [ 5:1eba0]->[ 5:03d60] 
+- router: response: 0000010000
+- ic: [03d60]->[0:01e]
+- ic response data:          1610612736
+- ric: [ 0:03d60]->[ 0:1eb] 
+router: [ 3:1f3bc]->[ 5:03e7c] 
+- router: response: 0000100000
+- ic: [03e7c]->[3:01f]
+- ic response data:                   0
+- ric: [ 0:03e7c]->[ 3:1f3] 
+router: [ 2:1f7c4]->[ 6:03ee4] 
+- router: response: 0000001000
+- ic response data:                   0
+- ic: [03ee4]->[0:01f]
+- ric: [ 0:03ee4]->[ 0:1f7] 
+router: [ 4:1efac]->[ 5:03dec] 
+- router: response: 0000000100
+- ic: [03dec]->[1:01e]
+- ric: [ 0:03dec]->[ 1:1ef] 
+- ic response data:                   0
+router: [ 5:1eba4]->[ 5:03d64] 
+- router: response: 0000010000
+- ic: [03d64]->[0:01e]
+- ic response data:          1610612736
+- ric: [ 0:03d64]->[ 0:1eb] 
+router: [ 6:1e794]->[ 4:03cf4] 
+- router: response: 0000100000
+- ic: [03cf4]->[2:01e]
+- ric: [ 0:03cf4]->[ 2:1e7] 
+- ic response data:                   0
+router: [ 7:1e38c]->[ 4:03c6c] 
+- router: response: 0001000000
+- ic: [03c6c]->[1:01e]
+- ic response data:                   0
+- ric: [ 0:03c6c]->[ 1:1e3] 
+router: [ 4:1efb0]->[ 5:03df0] 
+- router: response: 0010000000
+[Illegal Instruction Core 1] PC: 000000000000 Data: 00000000
+- ic response data:                   0
+- ic: [03df0]->[2:01e]
+- ric: [ 0:03df0]->[ 2:1ef] 
+router: [ 5:1eba8]->[ 5:03d68] 
+- router: response: 0000010000
+- ic: [03d68]->[1:01e]
+- ic response data:                   0
+- ric: [ 0:03d68]->[ 1:1eb] 
+router: [ 6:1e798]->[ 4:03cf8] 
+- router: response: 0000100000
+- ic: [03cf8]->[3:01e]
+- ric: [ 0:03cf8]->[ 3:1e7] 
+- ic response data:          1610612736
+router: [ 7:1e390]->[ 4:03c70] 
+- router: response: 0001000000
+- ic: [03c70]->[2:01e]
+- ic response data:          1610612736
+- ric: [ 0:03c70]->[ 2:1e3] 
+router: [ 4:1efb4]->[ 5:03df4] 
+- router: response: 0010000000
+- ic response data:                   0
+- ic: [03df4]->[2:01e]
+- ric: [ 0:03df4]->[ 2:1ef] 
+router: [ 5:1ebac]->[ 5:03d6c] 
+- router: response: 0000010000
+- ic: [03d6c]->[1:01e]
+- ic response data:                   0
+- ric: [ 0:03d6c]->[ 1:1eb] 
+router: [ 6:1e79c]->[ 4:03cfc] [ 0:1ffc4]->[ 6:03fe4] 
+- router: response: 0000100000
+- ic: [03cfc]->[3:01e]
+- ric: [ 0:03cfc]->[ 3:1e7] 
+- ic response data:          1610612736
+- ic: [03fe4]->[0:01f]
+- ric: [ 0:03fe4]->[ 0:1ff] 
+router: [ 7:1e394]->[ 4:03c74] 
+- router: response: 0001000001
+- ic: [03c74]->[2:01e]
+- ic response data:                   0
+- ric: [ 0:03c74]->[ 2:1e3] 
+- ic response data:                   0
+router: [ 8:1df84]->[ 4:03be4] 
+- router: response: 0010000000
+- ic: [03be4]->[0:01d]
+- ic response data:                   0
+- ric: [ 0:03be4]->[ 0:1df] 
+- router: response: 0100000000
+[Illegal Instruction Core 3] PC: 000000000000 Data: 00000000
+- ic response data:                   0
+router: [ 6:1e7a0]->[ 5:03ce0] 
+- ic: [03ce0]->[0:01e]
+- ric: [ 0:03ce0]->[ 0:1e7] 
+router: [ 7:1e398]->[ 4:03c78] 
+- router: response: 0001000000
+[Illegal Instruction Core 2] PC: 000000000000 Data: 00000000
+- ic: [03c78]->[3:01e]
+- ric: [ 0:03c78]->[ 3:1e3] 
+- ic response data:                   0
+router: [ 8:1df88]->[ 4:03be8] 
+- router: response: 0010000000
+- ic: [03be8]->[1:01d]
+- ic response data:                   0
+- ric: [ 0:03be8]->[ 1:1df] 
+- router: response: 0100000000
+- ic response data:          1610612736
+router: [ 6:1e7a4]->[ 5:03ce4] 
+[Illegal Instruction Core 1] PC: 000000000000 Data: 00000000
+- ic: [03ce4]->[0:01e]
+- ric: [ 0:03ce4]->[ 0:1e7] 
+router: [ 7:1e39c]->[ 4:03c7c] 
+- router: response: 0001000000
+- ic: [03c7c]->[3:01e]
+- ric: [ 0:03c7c]->[ 3:1e3] 
+- ic response data:                   0
+router: [ 8:1df8c]->[ 4:03bec] 
+- router: response: 0010000000
+- ic: [03bec]->[1:01d]
+- ic response data:                   0
+- ric: [ 0:03bec]->[ 1:1df] 
+- router: response: 0100000000
+- ic response data:          1610612736
+router: [ 0:1ffc8]->[ 6:03fe8] 
+[Illegal Instruction Core 4] PC: 000000000000 Data: 00000000
+- ic: [03fe8]->[1:01f]
+- ric: [ 0:03fe8]->[ 1:1ff] 
+router: [ 8:1df90]->[ 4:03bf0] 
+- router: response: 0000000001
+- ic: [03bf0]->[2:01d]
+- ric: [ 0:03bf0]->[ 2:1df] 
+- ic response data:                   0
+- router: response: 0100000000
+- ic response data:                   0
+[Illegal Instruction Core 5] PC: 000000000000 Data: 00000000
+router: [ 0:1ffcc]->[ 6:03fec] 
+- ic: [03fec]->[1:01f]
+- ric: [ 0:03fec]->[ 1:1ff] 
+router: [ 8:1df94]->[ 4:03bf4] 
+- router: response: 0000000001
+[Illegal Instruction Core 3] PC: 000000000000 Data: 00000000
+- ic: [03bf4]->[2:01d]
+- ric: [ 0:03bf4]->[ 2:1df] 
+- ic response data:                   0
+- router: response: 0100000000
+- ic response data:                   0
+router: [ 0:1ffd0]->[ 6:03ff0] 
+[Illegal Instruction Core 2] PC: 000000000000 Data: 00000000
+- ic: [03ff0]->[2:01f]
+- ric: [ 0:03ff0]->[ 2:1ff] 
+- router: response: 0000000001
+- ic response data:                   0
+[Illegal Instruction Core 1] PC: 000000000000 Data: 00000000
+router: [ 0:1ffd4]->[ 6:03ff4] 
+- ic: [03ff4]->[2:01f]
+- ric: [ 0:03ff4]->[ 2:1ff] 
+- router: response: 0000000001
+- ic response data:                   0
+[Illegal Instruction Core 6] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 7] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 4] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 5] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 8] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 1] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 2] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 3] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 4] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 5] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 6] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 7] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 8] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 0] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 1] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 2] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 3] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 4] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 5] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 6] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 7] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 8] PC: 000000000000 Data: 00000000
+[Illegal Instruction Core 0] PC: 000000000000 Data: 00000000

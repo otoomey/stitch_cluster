@@ -8,12 +8,17 @@
 // Floating Point Subsystem
 module snitch_fp_ss import snitch_pkg::*; #(
   parameter int unsigned AddrWidth = 32,
+  parameter int unsigned TCDMMemAddrWidth = 32,
   parameter int unsigned DataWidth = 32,
   parameter int unsigned NumFPOutstandingLoads = 0,
   parameter int unsigned NumFPOutstandingMem = 0,
   parameter int unsigned NumFPUSequencerInstr = 0,
   parameter type dreq_t = logic,
   parameter type drsp_t = logic,
+  parameter type mem_req_t = logic,
+  parameter type mem_rsp_t = logic,
+  parameter type tcdm_req_t = logic,
+  parameter type tcdm_rsp_t = logic,
   parameter bit RegisterSequencer = 0,
   parameter bit RegisterFPUIn     = 0,
   parameter bit RegisterFPUOut    = 0,
@@ -54,6 +59,12 @@ module snitch_fp_ss import snitch_pkg::*; #(
   // TCDM Data Interface for regular FP load/stores.
   output dreq_t            data_req_o,
   input  drsp_t            data_rsp_i,
+  // TCDM Data Interface for IC to connect to register bank.
+  input  tcdm_req_t        data_req_i,
+  output tcdm_rsp_t        data_rsp_o,
+  // Memory interfaces to SRAM
+  output mem_req_t [3:0]   mem_req_o,
+  input  mem_rsp_t [3:0]   mem_rsp_i,
   // Register Interface
   // FPU **un-timed** Side-channel
   input  fpnew_pkg::roundmode_e fpu_rnd_mode_i,
@@ -2489,6 +2500,22 @@ module snitch_fp_ss import snitch_pkg::*; #(
     if (src_fmt == fpnew_pkg::FP8 && fpu_fmt_mode_i.src == 1'b1) src_fmt = fpnew_pkg::FP8ALT;
     if (dst_fmt == fpnew_pkg::FP8 && fpu_fmt_mode_i.dst == 1'b1) dst_fmt = fpnew_pkg::FP8ALT;
   end
+
+  snitch_vfpr #(
+    .DataWidth(DataWidth),
+    .TCDMMemAddrWidth(TCDMMemAddrWidth),
+    .tcdm_req_t(tcdm_req_t),
+    .tcdm_rsp_t(tcdm_rsp_t),
+    .mem_req_t(mem_req_t),
+    .mem_rsp_t(mem_rsp_t)
+  ) i_vfpr (
+    .clk_i,
+    .rst_i,
+    .wr_req_i(data_req_i),
+    .wr_rsp_o(data_rsp_o),
+    .mem_req_o(mem_req_o),
+    .mem_rsp_i(mem_rsp_i)
+  );
 
   snitch_regfile #(
     .DATA_WIDTH     ( FLEN ),

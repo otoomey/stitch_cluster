@@ -108,6 +108,12 @@ module snitch_tcdm_interconnect #(
     assign mem_req_o[i].q = out_req[i];
   end
 
+  initial begin
+    if (NumInp == 1 && NumOut == 4) begin
+      $display("- ic: ByteOffset=%d, SelWidth=%d, InWidth=%d, MemAddrWidth=%d, RealAddrWidth=%d", ByteOffset, SelWidth, $bits(req_i[0].q.addr), MemAddrWidth, $bits(req_i[0].q.addr[ByteOffset+SelWidth+:MemAddrWidth]));
+    end
+  end
+
   // ------------
   // Request Side
   // ------------
@@ -275,5 +281,20 @@ module snitch_tcdm_interconnect #(
     assign rsp_o[i].p_valid = out_rsp_mux.valid;
   end
 
+
+  always @(posedge clk_i) begin
+    // if a transactions is happening
+    if (|req_q_valid_flat & |rsp_q_ready_flat) begin
+      $write("- ric: ");
+    end
+    foreach (bank_select[i]) begin
+      if (req_q_valid_flat[i] && rsp_q_ready_flat[i]) begin
+        $write("[%2d:%x]->[%2d:%x] ", i, req_i[i].q.addr, bank_select[i], in_req[i].addr);
+      end
+    end
+    if (|req_q_valid_flat & |rsp_q_ready_flat) begin
+      $write("\n");
+    end
+  end
 
 endmodule

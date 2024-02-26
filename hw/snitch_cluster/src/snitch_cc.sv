@@ -13,6 +13,7 @@
 module snitch_cc #(
   /// Address width of the buses
   parameter int unsigned AddrWidth          = 0,
+  parameter int unsigned TCDMMemAddrWidth   = 32,
   /// Data width of the buses.
   parameter int unsigned DataWidth          = 0,
   /// Data width of the AXI DMA buses.
@@ -31,6 +32,10 @@ module snitch_cc #(
   parameter type         tcdm_req_t         = logic,
   /// Data port response type.
   parameter type         tcdm_rsp_t         = logic,
+  /// Memory port request type.
+  parameter type         mem_req_t          = logic,
+  /// Memory port response type.
+  parameter type         mem_rsp_t          = logic,
   /// TCDM User Payload
   parameter type         tcdm_user_t        = logic,
   parameter type         axi_req_t          = logic,
@@ -122,6 +127,12 @@ module snitch_cc #(
   // TCDM Streamer Ports
   output tcdm_req_t [TCDMPorts-1:0]  tcdm_req_o,
   input  tcdm_rsp_t [TCDMPorts-1:0]  tcdm_rsp_i,
+  // TCDM Data Interface for IC to connect to register bank.
+  input  tcdm_req_t                  tcdm_req_i,
+  output tcdm_rsp_t                  tcdm_rsp_o,
+  // Memory interfaces to SRAM
+  output mem_req_t [3:0]             mem_req_o,
+  input  mem_rsp_t [3:0]             mem_rsp_i,
   // Accelerator Offload port
   // DMA ports
   output axi_req_t                   axi_dma_req_o,
@@ -460,6 +471,7 @@ module snitch_cc #(
 
     snitch_fp_ss #(
       .AddrWidth (AddrWidth),
+      .TCDMMemAddrWidth(TCDMMemAddrWidth),
       .DataWidth (DataWidth),
       .NumFPOutstandingLoads (NumFPOutstandingLoads),
       .NumFPOutstandingMem (NumFPOutstandingMem),
@@ -469,6 +481,10 @@ module snitch_cc #(
       .SsrRegs (SsrRegs),
       .dreq_t (dreq_t),
       .drsp_t (drsp_t),
+      .tcdm_req_t (tcdm_req_t),
+      .tcdm_rsp_t (tcdm_rsp_t),
+      .mem_req_t (mem_req_t),
+      .mem_rsp_t (mem_rsp_t),
       .acc_req_t (acc_req_t),
       .acc_resp_t (acc_resp_t),
       .RegisterSequencer (RegisterSequencer),
@@ -501,6 +517,10 @@ module snitch_cc #(
       .acc_resp_ready_i ( acc_pready     ),
       .data_req_o       ( fpu_dreq       ),
       .data_rsp_i       ( fpu_drsp       ),
+      .data_req_i       ( tcdm_req_i     ),
+      .data_rsp_o       ( tcdm_rsp_o     ),
+      .mem_req_o        ( mem_req_o      ),
+      .mem_rsp_i        ( mem_rsp_i      ),
       .fpu_rnd_mode_i   ( fpu_rnd_mode   ),
       .fpu_fmt_mode_i   ( fpu_fmt_mode   ),
       .fpu_status_o     ( fpu_status     ),

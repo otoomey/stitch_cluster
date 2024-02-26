@@ -65,6 +65,8 @@ module snitch_cluster
   parameter int unsigned ICacheSets [NrHives]      = '{default: 0},
   /// Enable virtual memory support.
   parameter bit          VMSupport          = 1,
+  /// Enable virtual floating point register file
+  parameter bit          VFPR               = 1,
   /// Per-core enabling of the standard `E` ISA reduced-register extension.
   parameter bit [NrCores-1:0] RVE           = '0,
   /// Per-core enabling of the standard `F` ISA extensions.
@@ -491,6 +493,9 @@ module snitch_cluster
   mem_req_t [NrSuperBanks-1:0][BanksPerSuperBank-1:0] ic_req;
   mem_rsp_t [NrSuperBanks-1:0][BanksPerSuperBank-1:0] ic_rsp;
 
+  tcdm_req_t [7:0] router_req; // TODO DMA CORE
+  tcdm_rsp_t [7:0] router_rsp; // TODO DMA CORE
+
   mem_dma_req_t [NrSuperBanks-1:0] sb_dma_req;
   mem_dma_rsp_t [NrSuperBanks-1:0] sb_dma_rsp;
 
@@ -735,7 +740,7 @@ module snitch_cluster
         .NumWords (TCDMDepth),
         .DataWidth (NarrowDataWidth),
         .ByteWidth (8),
-        .NumPorts (1),
+        .NumPorts (1), 
         .Latency (1),
         .impl_in_t (sram_cfg_t)
       ) i_data_mem (
@@ -790,29 +795,49 @@ module snitch_cluster
     end
   end
 
-  snitch_tcdm_interconnect #(
-    .NumInp (NumTCDMIn),
-    .NumOut (NrBanks),
-    .tcdm_req_t (tcdm_req_t),
-    .tcdm_rsp_t (tcdm_rsp_t),
-    .mem_req_t (mem_req_t),
-    .mem_rsp_t (mem_rsp_t),
-    .MemAddrWidth (TCDMMemAddrWidth),
-    .DataWidth (NarrowDataWidth),
-    .user_t (tcdm_user_t),
-    .MemoryResponseLatency (1 + RegisterTCDMCuts),
-    .Radix (Radix),
-    .Topology (Topology),
-    .NumSwitchNets (NumSwitchNets),
-    .SwitchLfsrArbiter (SwitchLfsrArbiter)
-  ) i_tcdm_interconnect (
-    .clk_i,
-    .rst_ni,
-    .req_i ({axi_soc_req, tcdm_req}),
-    .rsp_o ({axi_soc_rsp, tcdm_rsp}),
-    .mem_req_o (ic_req),
-    .mem_rsp_i (ic_rsp)
-  );
+  if (VFPR) begin
+    snitch_tcdm_router #(
+      .AddrWidth(TCDMAddrWidth),
+      .NumInp (NumTCDMIn),
+      .NumOut (8),  // TODO DMA CORE
+      .tcdm_req_t (tcdm_req_t),
+      .tcdm_rsp_t (tcdm_rsp_t),
+      .MemCoallWidth(2),
+      .DataWidth(NarrowDataWidth),
+      .user_t(tcdm_user_t)
+    ) i_tcdm_router (
+      .clk_i,
+      .rst_ni,
+      .mst_req_i ({axi_soc_req, tcdm_req}),
+      .mst_rsp_o ({axi_soc_rsp, tcdm_rsp}),
+      .agnt_req_o (router_req),
+      .agnt_rsp_i (router_rsp)
+    );
+  end else begin
+    snitch_tcdm_interconnect #(
+      .NumInp (NumTCDMIn),
+      .NumOut (NrBanks),
+      .tcdm_req_t (tcdm_req_t),
+      .tcdm_rsp_t (tcdm_rsp_t),
+      .mem_req_t (mem_req_t),
+      .mem_rsp_t (mem_rsp_t),
+      .MemAddrWidth (TCDMMemAddrWidth),
+      .DataWidth (NarrowDataWidth),
+      .user_t (tcdm_user_t),
+      .MemoryResponseLatency (1 + RegisterTCDMCuts),
+      .Radix (Radix),
+      .Topology (Topology),
+      .NumSwitchNets (NumSwitchNets),
+      .SwitchLfsrArbiter (SwitchLfsrArbiter)
+    ) i_tcdm_interconnect (
+      .clk_i,
+      .rst_ni,
+      .req_i ({axi_soc_req, tcdm_req}),
+      .rsp_o ({axi_soc_rsp, tcdm_rsp}),
+      .mem_req_o (ic_req),
+      .mem_rsp_i (ic_rsp)
+    );
+  end
 
   logic clk_d2;
 
@@ -830,9 +855,18 @@ module snitch_cluster
   hive_req_t [NrCores-1:0] hive_req;
   hive_rsp_t [NrCores-1:0] hive_rsp;
 
+  mem_req_t [NrBanks-1:0] ic_merged_req;
+  mem_rsp_t [NrBanks-1:0] ic_merged_rsp;
+
+  if (VFPR) begin
+    assign ic_req = ic_merged_req;
+    assign ic_merged_rsp = ic_rsp;
+  end
+
   for (genvar i = 0; i < NrCores; i++) begin : gen_core
     localparam int unsigned TcdmPorts = get_tcdm_ports(i);
     localparam int unsigned TcdmPortsOffs = get_tcdm_port_offs(i);
+    localparam int unsigned bnk_idx = i < 8 ? i : 0;
 
     axi_mst_dma_req_t   axi_dma_req;
     axi_mst_dma_resp_t  axi_dma_res;
@@ -851,8 +885,14 @@ module snitch_cluster
 
       tcdm_req_t [TcdmPorts-1:0] tcdm_req_wo_user;
 
+      mem_req_t [3:0] mem_bank_req;
+      mem_rsp_t [3:0] mem_bank_rsp;
+      tcdm_req_t ext_tcdm_req;
+      tcdm_rsp_t ext_tcdm_rsp;
+
       snitch_cc #(
         .AddrWidth (PhysicalAddrWidth),
+        .TCDMMemAddrWidth (TCDMMemAddrWidth),
         .DataWidth (NarrowDataWidth),
         .DMADataWidth (WideDataWidth),
         .DMAIdWidth (WideIdWidthIn),
@@ -863,6 +903,8 @@ module snitch_cluster
         .drsp_t (reqrsp_rsp_t),
         .tcdm_req_t (tcdm_req_t),
         .tcdm_rsp_t (tcdm_rsp_t),
+        .mem_req_t  (mem_req_t),
+        .mem_rsp_t  (mem_rsp_t),
         .tcdm_user_t (tcdm_user_t),
         .axi_req_t (axi_mst_dma_req_t),
         .axi_rsp_t (axi_mst_dma_resp_t),
@@ -926,6 +968,10 @@ module snitch_cluster
         .data_rsp_i (core_rsp[i]),
         .tcdm_req_o (tcdm_req_wo_user),
         .tcdm_rsp_i (tcdm_rsp[TcdmPortsOffs+:TcdmPorts]),
+        .tcdm_req_i (ext_tcdm_req),
+        .tcdm_rsp_o (ext_tcdm_rsp),
+        .mem_req_o  (mem_bank_req),
+        .mem_rsp_i  (mem_bank_rsp),
         .axi_dma_req_o (axi_dma_req),
         .axi_dma_res_i (axi_dma_res),
         .axi_dma_busy_o (),
@@ -948,6 +994,16 @@ module snitch_cluster
         assign axi_dma_res = wide_axi_mst_rsp[SDMAMst];
         assign dma_events = dma_core_events;
       end
+      if (i < 8) begin
+        assign ic_merged_req[i*4+:4] = mem_bank_req;
+        assign mem_bank_rsp = ic_merged_rsp[i*4+:4];
+        assign ext_tcdm_req = router_req[i];
+        assign router_rsp[i] = ext_tcdm_rsp;
+      end
+  end
+
+  initial begin
+    $display("xfrep: %b", Xfrep);
   end
 
   for (genvar i = 0; i < NrHives; i++) begin : gen_hive
