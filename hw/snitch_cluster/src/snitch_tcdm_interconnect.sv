@@ -289,7 +289,7 @@ module snitch_tcdm_interconnect #(
     end
     foreach (bank_select[i]) begin
       if (req_q_valid_flat[i] && rsp_q_ready_flat[i]) begin
-        $write("[%2d:%x]->[%2d:%x] ", i, req_i[i].q.addr, bank_select[i], in_req[i].addr);
+        $write("[%2d:%x]->[%2d:%x=%x=%x] ", i, req_i[i].q.addr, bank_select[i], in_req[i].addr, out_req[bank_select[i]].addr, mem_req_o[bank_select[i]].q.addr);
       end
     end
     if (|req_q_valid_flat & |rsp_q_ready_flat) begin

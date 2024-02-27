@@ -17,6 +17,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
   parameter type drsp_t = logic,
   parameter type mem_req_t = logic,
   parameter type mem_rsp_t = logic,
+  parameter type tcdm_user_t = logic,
   parameter type tcdm_req_t = logic,
   parameter type tcdm_rsp_t = logic,
   parameter bit RegisterSequencer = 0,
@@ -2507,7 +2508,8 @@ module snitch_fp_ss import snitch_pkg::*; #(
     .tcdm_req_t(tcdm_req_t),
     .tcdm_rsp_t(tcdm_rsp_t),
     .mem_req_t(mem_req_t),
-    .mem_rsp_t(mem_rsp_t)
+    .mem_rsp_t(mem_rsp_t),
+    .tcdm_user_t(tcdm_user_t)
   ) i_vfpr (
     .clk_i,
     .rst_i,

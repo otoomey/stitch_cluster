@@ -483,6 +483,7 @@ module snitch_cc #(
       .drsp_t (drsp_t),
       .tcdm_req_t (tcdm_req_t),
       .tcdm_rsp_t (tcdm_rsp_t),
+      .tcdm_user_t(tcdm_user_t),
       .mem_req_t (mem_req_t),
       .mem_rsp_t (mem_rsp_t),
       .acc_req_t (acc_req_t),

@@ -3,6 +3,7 @@ module snitch_vfpr #(
     parameter int unsigned TCDMMemAddrWidth = 0,
     parameter type tcdm_req_t = logic,
     parameter type tcdm_rsp_t = logic,
+    parameter type tcdm_user_t = logic,
     parameter type mem_req_t = logic,
     parameter type mem_rsp_t = logic
 ) (
@@ -22,7 +23,8 @@ module snitch_vfpr #(
         .mem_req_t(mem_req_t),
         .mem_rsp_t(mem_rsp_t),
         .MemAddrWidth(TCDMMemAddrWidth),
-        .DataWidth(DataWidth)
+        .DataWidth(DataWidth),
+        .user_t(tcdm_user_t)
     ) i_vregfile (
         .clk_i,
         .rst_ni(~rst_i),
