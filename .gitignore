@@ -1,6 +1,9 @@
-.bender/
-Bender.lock
-__pycache__
+# Nonfree repository
+/nonfree/
+
+# Dependency files
+/.bender/
+/Bender.lock
 
 # Modelsim Files
 *.wlf
