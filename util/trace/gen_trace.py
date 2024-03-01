@@ -53,7 +53,7 @@ REG_ABI_NAMES_F = (*('ft{}'.format(i) for i in range(0, 8)), 'fs0', 'fs1',
                      for i in range(2, 12)), *('ft{}'.format(i)
                                                for i in range(8, 12)))
 
-TRACE_SRCES = {'snitch': 0, 'fpu': 1, 'sequencer': 2, 'scoreboard': 3}
+TRACE_SRCES = {'snitch': 0, 'fpu': 1, 'sequencer': 2, 'scoreboard': 3, 'vfpr': 4}
 
 LS_SIZES = ('Byte', 'Half', 'Word', 'Doub')
 
@@ -683,7 +683,24 @@ def annotate_insn(
             else:
                 insn, pc_str, annot = ('', '', '')
         elif extras['source'] == TRACE_SRCES['scoreboard']:
-            annot = '<scoreboard>'
+            annot_list = []
+            if extras['push_valid_i'] == 1:
+                annot_list.append(f'tracking 0x{extras["push_rd_addr_i"]:x} -> 0x{extras["entry_index_o"]:x}')
+            if extras['pop_valid_i'] == 1:
+                annot_list.append(f'releasing 0x{extras["pop_index_i"]:x}')
+            annot_list = ', '.join(annot_list);
+            annot = f'(sb) {annot_list}' 
+        elif extras['source'] == TRACE_SRCES['vfpr']:
+            annot_list = []
+            if extras['read'] == 1:
+                all_regs = [extras['reg0'], extras['reg1'], extras['reg2']]
+                regs = [r for i, r in enumerate(all_regs) if extras['reg_enabled'] & (0b1 << i) == (0b1 << i)]
+                if len(regs) > 0:
+                    annot_list.append(f'reading {regs}')
+            if extras['write'] == 1:
+                annot_list.append(f'wr/tcdm to 0x{extras["wr_addr"]:x}')
+            annot_list = ', '.join(annot_list);
+            annot = f'(vfpr) {annot_list}' 
         # Annotate FPSS
         elif extras['source'] == TRACE_SRCES['fpu']:
             annot_list = []

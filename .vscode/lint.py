@@ -11,7 +11,8 @@ try:
         '--error-limit',
         '9999',
         '-Wall',
-        '-Wno-MULTITOP'
+        '-Wno-MULTITOP',
+        '-Wno-MODDUP'
     ], stderr=subprocess.STDOUT)
 except subprocess.CalledProcessError as e:
     out = e.output.decode('ascii')

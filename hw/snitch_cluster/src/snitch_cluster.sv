@@ -1002,10 +1002,6 @@ module snitch_cluster
       end
   end
 
-  initial begin
-    $display("xfrep: %b", Xfrep);
-  end
-
   for (genvar i = 0; i < NrHives; i++) begin : gen_hive
       localparam int unsigned HiveSize = get_hive_size(i);
 

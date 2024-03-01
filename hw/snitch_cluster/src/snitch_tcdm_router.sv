@@ -143,29 +143,29 @@ module snitch_tcdm_router #(
     assign mst_rsp_o[i].p_valid = rsp_valid[i];
   end
 
-  initial begin
-    $display("addr_width: %d, mem_coall: %d, ByteOffset: %d, SelWidth: %d", AddrWidth, MemCoallWidth, ByteOffset, SelWidth);
-    $display("mem_high_width: %d", $bits(mst_req_i[0].q.addr[AddrWidth-1:ByteOffset+MemCoallWidth+SelWidth]));
-    $display("mem_low_width: %d", $bits(mst_req_i[0].q.addr[ByteOffset+MemCoallWidth-1:0]));
-    $display("mst addr width: %d", $bits(mst_req_i[0].q.addr));
-    $display("payload addr width: %d", $bits(payload_req_i[0].q.addr));
-  end
+  // initial begin
+  //   $display("addr_width: %d, mem_coall: %d, ByteOffset: %d, SelWidth: %d", AddrWidth, MemCoallWidth, ByteOffset, SelWidth);
+  //   $display("mem_high_width: %d", $bits(mst_req_i[0].q.addr[AddrWidth-1:ByteOffset+MemCoallWidth+SelWidth]));
+  //   $display("mem_low_width: %d", $bits(mst_req_i[0].q.addr[ByteOffset+MemCoallWidth-1:0]));
+  //   $display("mst addr width: %d", $bits(mst_req_i[0].q.addr));
+  //   $display("payload addr width: %d", $bits(payload_req_i[0].q.addr));
+  // end
   
-  always @(posedge clk_i) begin
-    // if a transactions is happening
-    if (|mst_req_q_valid_flat & |mst_rsp_q_ready_flat) begin
-      $write("router: ");
-    end
-    foreach (bank_select[i]) begin
-      if (mst_req_q_valid_flat[i] && mst_rsp_q_ready_flat[i]) begin
-        $write("[%2d:%x]->[%2d:%x] ", i, mst_req_i[i].q.addr, bank_select[i], payload_req_i[i].q.addr);
-      end
-    end
-    if (|mst_req_q_valid_flat & |mst_rsp_q_ready_flat) begin
-      $write("\n");
-    end
-    if (|rsp_valid) begin
-      $display("- router: response: %b", rsp_valid);
-    end
-  end
+  // always @(posedge clk_i) begin
+  //   // if a transactions is happening
+  //   if (|mst_req_q_valid_flat & |mst_rsp_q_ready_flat) begin
+  //     $write("router: ");
+  //   end
+  //   foreach (bank_select[i]) begin
+  //     if (mst_req_q_valid_flat[i] && mst_rsp_q_ready_flat[i]) begin
+  //       $write("[%2d:%x]->[%2d:%x] ", i, mst_req_i[i].q.addr, bank_select[i], payload_req_i[i].q.addr);
+  //     end
+  //   end
+  //   if (|mst_req_q_valid_flat & |mst_rsp_q_ready_flat) begin
+  //     $write("\n");
+  //   end
+  //   if (|rsp_valid) begin
+  //     $display("- router: response: %b", rsp_valid);
+  //   end
+  // end
 endmodule

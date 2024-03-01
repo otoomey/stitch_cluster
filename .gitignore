@@ -17,3 +17,6 @@ gmon.out
 # Installation directories
 /.venv/
 /tools/
+
+# traces
+sim.vcd

@@ -176,11 +176,12 @@ package snitch_pkg;
   // Trace Infrastructure
   // --------------------
   // pragma translate_off
-  typedef enum logic [1:0] {
+  typedef enum logic [2:0] {
     SrcSnitch =  0,
     SrcFpu = 1,
     SrcFpuSeq = 2,
-    SrcFpuSB = 3
+    SrcFpuSB = 3,
+    SrcFpuVFPR = 4
   } trace_src_e;
 
   typedef struct packed {
@@ -275,6 +276,10 @@ package snitch_pkg;
     longint op_0;
     longint op_1;
     longint op_2;
+    longint vfpr_in_valid;
+    longint vfpr_in_ready;
+    longint vfpr_out_valid;
+    longint vfpr_out_ready;
     longint use_fpu;
     longint fpu_in_rd;
     longint fpu_in_acc;
@@ -314,6 +319,10 @@ package snitch_pkg;
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "op_0", fpu_trace.op_0);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "op_1", fpu_trace.op_1);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "op_2", fpu_trace.op_2);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "vfpr_in_valid", fpu_trace.vfpr_in_valid);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "vfpr_in_ready", fpu_trace.vfpr_in_ready);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "vfpr_out_valid", fpu_trace.vfpr_out_valid);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "vfpr_out_ready", fpu_trace.vfpr_out_ready);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "use_fpu", fpu_trace.use_fpu);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "fpu_in_rd", fpu_trace.fpu_in_rd);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "fpu_in_acc", fpu_trace.fpu_in_acc);
@@ -379,6 +388,41 @@ package snitch_pkg;
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "test_addr_i", fpu_sb.test_addr_i);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "test_addr_present_o", fpu_sb.test_addr_present_o);
     extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "full_o", fpu_sb.full_o);
+    extras_str = $sformatf("%s}", extras_str);
+    return extras_str;
+  endfunction
+
+  typedef struct packed {
+    longint source;
+    longint read;
+    longint read_result;
+    longint reg0;
+    longint reg1;
+    longint reg2;
+    longint reg_enabled;
+    longint data0;
+    longint data1;
+    longint data2;
+    longint write;
+    longint wr_addr;
+    longint wr_data;
+  } fpu_vfpr_trace_port_t;
+
+  function automatic string print_fpu_vfpr_trace(fpu_vfpr_trace_port_t fpu_vfpr);
+    string extras_str = "{";
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "source", fpu_vfpr.source);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "read", fpu_vfpr.read);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "read_result", fpu_vfpr.read_result);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "reg0", fpu_vfpr.reg0);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "reg1", fpu_vfpr.reg1);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "reg2", fpu_vfpr.reg2);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "reg_enabled", fpu_vfpr.reg_enabled);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "data0", fpu_vfpr.data0);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "data1", fpu_vfpr.data1);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "data2", fpu_vfpr.data2);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "write", fpu_vfpr.write);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "wr_addr", fpu_vfpr.wr_addr);
+    extras_str = $sformatf("%s'%s': 0x%0x, ", extras_str, "wr_data", fpu_vfpr.wr_data);
     extras_str = $sformatf("%s}", extras_str);
     return extras_str;
   endfunction
