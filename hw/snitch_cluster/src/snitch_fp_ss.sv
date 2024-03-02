@@ -41,8 +41,8 @@ module snitch_fp_ss import snitch_pkg::*; #(
   /// Derived parameter *Do not override*
   parameter type addr_t = logic [AddrWidth-1:0],
   parameter type data_t = logic [DataWidth-1:0],
-  parameter int unsigned ReqAddrWidth = TCDMMemAddrWidth,
-  parameter int unsigned ReqPrefixWidth = ReqAddrWidth-3,
+  parameter int unsigned ReqAddrWidth = TCDMMemAddrWidth+2,
+  parameter int unsigned ReqPrefixWidth = TCDMMemAddrWidth-3,
   parameter type regaddr_t = logic [ReqAddrWidth-1:0]
 ) (
   input  logic             clk_i,
@@ -65,8 +65,8 @@ module snitch_fp_ss import snitch_pkg::*; #(
   output dreq_t            data_req_o,
   input  drsp_t            data_rsp_i,
   // TCDM Data Interface for IC to connect to register bank.
-  input  tcdm_req_t        data_req_i,
-  output tcdm_rsp_t        data_rsp_o,
+  input  tcdm_req_t        tcdm_req_i,
+  output tcdm_rsp_t        tcdm_rsp_o,
   // Memory interfaces to SRAM
   output mem_req_t [3:0]   mem_req_o,
   input  mem_rsp_t [3:0]   mem_rsp_i,
@@ -96,23 +96,12 @@ module snitch_fp_ss import snitch_pkg::*; #(
 
   localparam ScoreboardDepth = 5;
 
-  // fpnew_pkg::operation_e  vfpr_tag_in.fpu_op;
-  // fpnew_pkg::roundmode_e  vfpr_tag_in.fpu_rnd_mode;
-  // fpnew_pkg::fp_format_e  vfpr_tag_in.src_fmt, vfpr_tag_in.dst_fmt;
-  // fpnew_pkg::int_format_e vfpr_tag_in.int_fmt;
-  // logic                   vfpr_tag_in.vectorial_op;
-  // logic                   vfpr_tag_in.set_dyn_rm;
+  // logic [0:0]           fpr_we;
+  // logic [0:0][4:0]      fpr_waddr;
+  // logic [0:0][FLEN-1:0] fpr_wdata;
+  // logic [0:0]           fpr_wready;
 
-  // logic [2:0][4:0]      vfpr_tag_in.fpr_raddr;
-  logic [2:0][FLEN-1:0] fpr_rdata;
-
-  logic [0:0]           fpr_we;
-  logic [0:0][4:0]      fpr_waddr;
-  logic [0:0][FLEN-1:0] fpr_wdata;
-  logic [0:0]           fpr_wvalid;
-  logic [0:0]           fpr_wready;
-
-  logic [ScoreboardDepth-1:0] fpr_windex;
+  logic [ScoreboardDepth-1:0] sb_pop_index;
   logic [0:0]                 sb_pop_valid;
 
   logic ssr_active_d, ssr_active_q, ssr_active_ena;
@@ -122,31 +111,24 @@ module snitch_fp_ss import snitch_pkg::*; #(
     logic       ssr; // write-back to SSR at rd
     logic       acc; // write-back to result bus
     logic [4:0] rd;  // write-back to floating point regfile
-    logic [ScoreboardDepth-1:0] fpr_windex;
+    logic [ScoreboardDepth-1:0] sb_pop_index;
   } tag_t;
   tag_t fpu_tag_in, fpu_tag_out;
   tag_t lsu_tag_in, lsu_tag_out;
 
   // scoreboard
-  // logic [ScoreboardDepth-1:0] rd_index;
   logic [3:0][4:0] sb_tests;
   logic [3:0] sb_collision;
   logic sb_full;
 
-  // logic vfpr_tag_in.is_fpu;
   logic [2:0][FLEN-1:0] op;
   logic [2:0] vfpr_op_ready;
 
   logic        lsu_in_ready;
   logic        lsu_in_valid;
   logic [FLEN-1:0] ld_result;
-  logic        lsu_pvalid;
-  logic        lsu_pready;
-  // logic vfpr_tag_in.is_store, vfpr_tag_in.is_load;
-
-  // logic [31:0] sb_d, sb_q;
-  // logic vfpr_tag_in.rd_is_fp;
-  // `FFAR(sb_q, sb_d, '0, clk_i, rst_i)
+  logic        lsu_out_valid;
+  logic        lsu_out_ready;
 
   logic csr_instr;
 
@@ -156,10 +138,10 @@ module snitch_fp_ss import snitch_pkg::*; #(
 
   // WR tcdm requests
   tcdm_req_t fpr_wr_req;
-  tcdm_rsp_t fpss_wr_rsp;
+  tcdm_rsp_t fpr_wr_rsp;
 
   tcdm_req_t vfpr_req;
-  tcdm_req_t vfpr_rsp;
+  tcdm_rsp_t vfpr_rsp;
 
   typedef enum logic [2:0] {
     None,
@@ -168,16 +150,20 @@ module snitch_fp_ss import snitch_pkg::*; #(
     RegBRep, // Replication for vectors
     RegDest
   } op_select_e;
-  // op_select_e [2:0] vfpr_tag_in.op_select;
 
   typedef enum logic [1:0] {
     ResNone, ResAccBus
   } result_select_e;
   result_select_e result_select;
 
-  // logic vfpr_tag_in.op_mode;
+  typedef struct packed {
+    data_t data;
+    regaddr_t addr;
+    logic pop_sb;
+    logic [ScoreboardDepth-1:0] sb_pop_index;
+  } wr_tag_t;
 
-  logic [4:0] rs1, rs2, rs3; // vfpr_tag_in.rd;
+  logic [4:0] rs1, rs2, rs3; 
 
   // LSU
   typedef enum logic [1:0] {
@@ -186,7 +172,6 @@ module snitch_fp_ss import snitch_pkg::*; #(
     Word       = 2'b10,
     DoubleWord = 2'b11
   } ls_size_e;
-  // ls_size_e vfpr_tag_in.ls_size;
 
 
   logic dst_ready;
@@ -217,7 +202,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
     data_t                  data_argc;
     logic [4:0]             rd;
     regaddr_t               rd_bnk_addr;
-    logic [ScoreboardDepth-1:0] fpr_windex;
+    logic [ScoreboardDepth-1:0] sb_pop_index;
   } vfpr_tag_t;
   
   vfpr_tag_t vfpr_tag_in, vfpr_tag_out;
@@ -304,8 +289,8 @@ module snitch_fp_ss import snitch_pkg::*; #(
     .rst_i,
     .push_rd_addr_i(vfpr_tag_in.rd),
     .push_valid_i(sb_push_valid),
-    .entry_index_o(vfpr_tag_in.fpr_windex),
-    .pop_index_i(fpr_windex),
+    .entry_index_o(vfpr_tag_in.sb_pop_index),
+    .pop_index_i(sb_pop_index),
     .pop_valid_i(sb_pop_valid),
     .test_addr_i(sb_tests),
     .test_addr_present_o(sb_collision),
@@ -418,24 +403,14 @@ module snitch_fp_ss import snitch_pkg::*; #(
       if (lsu_in_valid & lsu_in_ready) begin
         $display("%d: lsu_in", $time);
       end
-      if (lsu_pvalid & lsu_pready) begin
+      if (lsu_out_valid & lsu_out_ready) begin
         $display("%d: lsu_out", $time);
       end
     end
   end
 
-  // either the FPU or the regfile produced a result
-  assign acc_resp_valid_o = (fpu_tag_out.acc & fpu_out_valid);
-  // stall FPU if we forward from reg
-  assign fpu_out_ready = ((fpu_tag_out.acc & acc_resp_ready_i) | (~fpu_tag_out.acc & fpr_wready));
-
   // FPU Result
   logic [FLEN-1:0] fpu_result;
-
-  // FPU Tag
-  assign acc_resp_o.id = fpu_tag_out.rd;
-  // accelerator bus write-port
-  assign acc_resp_o.data = fpu_result;
 
   assign vfpr_tag_in.rd = acc_req_q.data_op[11:7];
   assign rs1 = acc_req_q.data_op[19:15];
@@ -481,11 +456,11 @@ module snitch_fp_ss import snitch_pkg::*; #(
     vfpr_tag_in.op_mode = 1'b0;
 
     fpu_tag_in.rd = vfpr_tag_out.rd;
-    fpu_tag_in.fpr_windex = vfpr_tag_out.fpr_windex;
+    fpu_tag_in.sb_pop_index = vfpr_tag_out.sb_pop_index;
     fpu_tag_in.acc = vfpr_tag_out.rd_is_acc;
 
     lsu_tag_in.rd = vfpr_tag_out.rd;
-    lsu_tag_in.fpr_windex = vfpr_tag_out.fpr_windex;
+    lsu_tag_in.sb_pop_index = vfpr_tag_out.sb_pop_index;
 
     vfpr_tag_in.is_store = 1'b0;
     vfpr_tag_in.is_load = 1'b0;
@@ -2604,23 +2579,6 @@ module snitch_fp_ss import snitch_pkg::*; #(
     end
   end
 
-  // snitch_vfpr #(
-  //   .DataWidth(DataWidth),
-  //   .TCDMMemAddrWidth(TCDMMemAddrWidth),
-  //   .tcdm_req_t(tcdm_req_t),
-  //   .tcdm_rsp_t(tcdm_rsp_t),
-  //   .mem_req_t(mem_req_t),
-  //   .mem_rsp_t(mem_rsp_t),
-  //   .tcdm_user_t(tcdm_user_t)
-  // ) i_vfpr (
-  //   .clk_i,
-  //   .rst_i,
-  //   .wr_req_i(data_req_i),
-  //   .wr_rsp_o(data_rsp_o),
-  //   .mem_req_o(mem_req_o),
-  //   .mem_rsp_i(mem_rsp_i)
-  // );
-
   logic [2:0][4:0] vfpr_rdata;
   regaddr_t [2:0] reg_addrs;
   assign reg_addrs[0] = vfpr_tag_in.fpr_raddr[0];
@@ -2629,7 +2587,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
 
   snitch_vfpr #(
     .DataWidth(DataWidth),
-    .TCDMMemAddrWidth(TCDMMemAddrWidth),
+    .TCDMMemAddrWidth(TCDMMemAddrWidth), 
     .tcdm_req_t(tcdm_req_t),
     .tcdm_rsp_t(tcdm_rsp_t),
     .mem_req_t(mem_req_t),
@@ -2652,26 +2610,11 @@ module snitch_fp_ss import snitch_pkg::*; #(
     .rready_i(vfpr_out_ready),
     .rtag_i(vfpr_tag_in),
     .rtag_o(vfpr_tag_out),
-    .wr_req_i(data_req_i),
-    .wr_rsp_o(data_rsp_o),
+    .wr_req_i(vfpr_req),
+    .wr_rsp_o(vfpr_rsp),
     .mem_req_o(mem_req_o),
     .mem_rsp_i(mem_rsp_i),
     .vfpr_tracer_port(vfpr_tracer_port_o)
-  );
-
-  snitch_regfile #(
-    .DATA_WIDTH     ( FLEN ),
-    .NR_READ_PORTS  ( 3    ),
-    .NR_WRITE_PORTS ( 1    ),
-    .ZERO_REG_ZERO  ( 0    ),
-    .ADDR_WIDTH     ( 5    )
-  ) i_ff_regfile (
-    .clk_i,
-    .raddr_i   ( vfpr_tag_out.fpr_raddr ),
-    .rdata_o   ( fpr_rdata ),
-    .waddr_i   ( fpr_waddr ),
-    .wdata_i   ( fpr_wdata ),
-    .we_i      ( fpr_we    )
   );
 
   // ----------------------
@@ -2717,7 +2660,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
         // Scoreboard or SSR
         RegA, RegB, RegBRep, RegC, RegDest: begin
           // map register 0 and 1 to SSRs
-          op[i] = fpr_rdata[i];
+          op[i] = vfpr_rdata[i];
           // Replicate if needed
           if (vfpr_tag_out.op_select[i] == RegBRep) begin
             unique case (vfpr_tag_out.src_fmt)
@@ -2775,66 +2718,6 @@ module snitch_fp_ss import snitch_pkg::*; #(
     .out_ready_i    ( fpu_out_ready )
   );
 
-  assign ssr_waddr_o = fpr_waddr;
-  assign ssr_wdata_o = fpr_wdata;
-  logic [63:0] nan_boxed_arga;
-  // this datapath bypasses vfpr
-  assign nan_boxed_arga = {{32{1'b1}}, acc_req_q.data_arga[31:0]};
-
-  // Arbitrate Register File Write Port
-  always_comb begin
-    fpr_we = 1'b0;
-    fpr_waddr = '0;
-    fpr_wdata = '0;
-    fpr_wvalid = 1'b0;
-    lsu_pready = 1'b0;
-    fpr_wready = 1'b1;
-    ssr_wvalid_o = 1'b0;
-    ssr_wdone_o = 1'b1;
-    sb_pop_valid = 1'b0;
-    acc_dp_ready = '0;
-    fpr_wr_req.q_valid = 1'b0;
-    // the accelerator master wants to write
-    if (acc_dp_valid) begin
-      acc_dp_ready = '1;
-      fpr_we = 1'b1;
-      // NaN-Box the value
-      fpr_wdata = nan_boxed_arga[FLEN-1:0];
-      fpr_wr_req.q.data = nan_boxed_arga[FLEN-1:0];
-      fpr_waddr = vfpr_tag_in.rd;
-      fpr_wr_req.q.addr = vfpr_tag_in.rd;
-      fpr_wvalid = 1'b1;
-      fpr_wr_req.q_valid = 1'b1;
-      fpr_wready = 1'b0;
-    end else if (fpu_out_valid && !fpu_tag_out.acc) begin
-      fpr_we = 1'b1;
-      if (fpu_tag_out.ssr) begin
-        ssr_wvalid_o = 1'b1;
-        // stall write-back to SSR
-        if (!ssr_wready_i) begin
-          fpr_wready = 1'b0;
-          fpr_we = 1'b0;
-        end else begin
-          ssr_wdone_o = 1'b1;
-        end
-      end
-      fpr_wdata = fpu_result;
-      fpr_waddr = fpu_tag_out.rd;
-      fpr_windex = fpu_tag_out.fpr_windex;
-      fpr_wvalid = 1'b1;
-      sb_pop_valid = fpu_out_ready;
-    end else if (lsu_pvalid) begin
-      lsu_pready = 1'b1;
-      fpr_we = 1'b1;
-      fpr_wdata = ld_result;
-      fpr_waddr = lsu_tag_out.rd;
-      fpr_windex = lsu_tag_out.fpr_windex;
-      fpr_wvalid = 1'b1;
-      fpr_wready = 1'b0;
-      sb_pop_valid = lsu_pready;
-    end
-  end
-
   // ----------------------
   // Load/Store Unit
   // ----------------------
@@ -2863,11 +2746,106 @@ module snitch_fp_ss import snitch_pkg::*; #(
     .lsu_pdata_o (ld_result),
     .lsu_ptag_o (lsu_tag_out),
     .lsu_perror_o (), // ignored for the moment
-    .lsu_pvalid_o (lsu_pvalid),
-    .lsu_pready_i (lsu_pready),
+    .lsu_pvalid_o (lsu_out_valid),
+    .lsu_pready_i (lsu_out_ready),
     .lsu_empty_o (/* unused */),
     .data_req_o,
     .data_rsp_i
+  );
+
+  logic [63:0] nan_boxed_arga;
+  // this datapath bypasses vfpr
+  assign nan_boxed_arga = {{32{1'b1}}, acc_req_q.data_arga[31:0]};
+
+  // demux fpu accelerator writeback
+  logic fpu_fpr_valid, fpu_fpr_ready;
+  stream_demux #(
+    .N_OUP(2)
+  ) i_fpu_acc_wr (
+    .inp_valid_i(fpu_out_valid),
+    .inp_ready_o(fpu_out_ready),
+    .oup_sel_i(fpu_tag_out.acc),
+    .oup_valid_o({acc_resp_valid_o, fpu_fpr_valid}),
+    .oup_ready_i({acc_resp_ready_i, fpu_fpr_ready})
+  );
+  assign acc_resp_o.id = fpu_tag_out.rd;
+  assign acc_resp_o.data = fpu_result;
+
+  // it may take multiple cycles to complete WR depending on TCDM contention
+  wr_tag_t wr_fpu, wr_lsu, wr_acc, wr_out;
+
+  assign wr_fpu.data = fpu_result;
+  assign wr_fpu.addr = fpu_tag_out.rd;
+  assign wr_fpu.pop_sb = 1'b1;
+  assign wr_fpu.sb_pop_index = fpu_tag_out.sb_pop_index;
+
+  assign wr_lsu.data = ld_result;
+  assign wr_lsu.addr = lsu_tag_out.rd;
+  assign wr_lsu.pop_sb = 1'b1;
+  assign wr_lsu.sb_pop_index = lsu_tag_out.sb_pop_index;
+
+  assign wr_acc.data = nan_boxed_arga[FLEN-1:0];;
+  assign wr_acc.addr = vfpr_tag_in.rd;
+  assign wr_acc.pop_sb = 1'b0;
+  assign wr_acc.sb_pop_index = '0;
+  
+  logic fpr_wr_valid, fpr_wr_ready;
+  logic [1:0] wr_sel;
+  
+  always_comb begin
+    if (acc_dp_valid) begin
+      wr_sel = 2'b00;
+    end else if (fpu_fpr_valid & ~fpu_tag_out.acc) begin
+      wr_sel = 2'b01;
+    end else begin 
+      wr_sel = 2'b10;
+    end
+  end
+
+  // determine who gets to write
+  stream_mux #(
+    .DATA_T(wr_tag_t),
+    .N_INP(3)
+  ) i_wr_mux (
+    .inp_data_i({wr_lsu, wr_fpu, wr_acc}),
+    .inp_valid_i({lsu_out_valid, fpu_fpr_valid, acc_dp_valid}),
+    .inp_ready_o({lsu_out_ready, fpu_fpr_ready, acc_dp_ready}),
+    .inp_sel_i(wr_sel),
+    .oup_data_o(wr_out),
+    .oup_valid_o(fpr_wr_valid),
+    .oup_ready_i(fpr_wr_ready)
+  );
+
+  assign fpr_wr_req.q.addr = wr_out.addr;
+  assign fpr_wr_req.q.write = 1'b1;
+  assign fpr_wr_req.q.amo = reqrsp_pkg::AMONone;
+  assign fpr_wr_req.q.data = wr_out.data;
+  assign fpr_wr_req.q.strb = '1;
+  assign fpr_wr_req.q.user = '0;
+  assign fpr_wr_req.q_valid = fpr_wr_valid;
+  assign fpr_wr_ready = fpr_wr_rsp.q_ready;
+
+  assign sb_pop_valid = wr_out.pop_sb & fpr_wr_valid & fpr_wr_ready;
+  assign sb_pop_index = wr_out.sb_pop_index;
+
+  // arbitrate between external mem ops and the writeback path
+  // some design explo is needed here to determine optimal resp depth
+  // as well as arbitration strategy
+  tcdm_mux #(
+    .NrPorts(2),
+    .AddrWidth(ReqAddrWidth),
+    .DataWidth(DataWidth),
+    .user_t(tcdm_user_t),
+    .RespDepth(4),
+    .tcdm_req_t(tcdm_req_t),
+    .tcdm_rsp_t(tcdm_rsp_t)
+  ) i_tcdm_mux (
+    .clk_i,
+    .rst_ni(~rst_i),
+    .slv_req_i({fpr_wr_req, tcdm_req_i}),
+    .slv_rsp_o({fpr_wr_rsp, tcdm_rsp_o}),
+    .mst_req_o(vfpr_req),
+    .mst_rsp_i(vfpr_rsp)
   );
 
   // SSRs
@@ -2927,9 +2905,9 @@ module snitch_fp_ss import snitch_pkg::*; #(
   assign trace_port_o.acc_wb_ready = (result_select == ResAccBus);
   assign trace_port_o.fpu_out_acc  = fpu_tag_out.acc;
   assign trace_port_o.fpu_out_rd   = fpu_tag_out.rd;
-  assign trace_port_o.fpr_waddr    = fpr_waddr;
-  assign trace_port_o.fpr_wdata    = fpr_wdata[0];
-  assign trace_port_o.fpr_we       = fpr_we[0];
+  assign trace_port_o.fpr_waddr    = wr_out.addr;
+  assign trace_port_o.fpr_wdata    = wr_out.data;
+  assign trace_port_o.fpr_we       = fpr_wr_valid & fpr_wr_ready;
   // pragma translate_on
 
   /// Assertions

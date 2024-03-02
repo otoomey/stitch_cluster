@@ -8,7 +8,8 @@ module snitch_vfpr import snitch_pkg::*; #(
     parameter type mem_rsp_t = logic,
     parameter type tag_t = logic,
     // derived parameters
-    parameter type addr_t = logic [TCDMMemAddrWidth-1:0],
+    parameter int unsigned AddrWidth = TCDMMemAddrWidth + 2,
+    parameter type addr_t = logic [AddrWidth-1:0],
     parameter type data_t = logic [DataWidth-1:0]
 ) (
     input  logic           clk_i,

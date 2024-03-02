@@ -18,6 +18,7 @@ except subprocess.CalledProcessError as e:
     out = e.output.decode('ascii')
 
 out = re.sub(r'%.*\/\.bender\/[^%]*', '', out)
+# print(out)
 
 if len(sys.argv) > 1:
     pat = f'%.*{sys.argv[1]}[^%]*'
