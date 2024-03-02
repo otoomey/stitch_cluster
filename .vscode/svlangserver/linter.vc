@@ -81,7 +81,6 @@
 +incdir+/workspaces/stitch_cluster/hw/snitch/src
 +incdir+/workspaces/stitch_cluster/hw/tcdm_interface/include/tcdm_interface
 +incdir+/workspaces/stitch_cluster/hw/tcdm_interface/src
-+incdir+/workspaces/stitch_cluster/target/snitch_cluster/generated
 +incdir+/workspaces/stitch_cluster/.bender/git/checkouts/apb-856f26900b176af1/include/apb
 +incdir+/workspaces/stitch_cluster/.bender/git/checkouts/apb-856f26900b176af1/src
 +incdir+/workspaces/stitch_cluster/.bender/git/checkouts/axi_riscv_atomics-baa633fa798ef2d4/src
@@ -131,4 +130,3 @@
 +incdir+/workspaces/stitch_cluster/hw/snitch/src
 +incdir+/workspaces/stitch_cluster/hw/tcdm_interface/include/tcdm_interface
 +incdir+/workspaces/stitch_cluster/hw/tcdm_interface/src
-+incdir+/workspaces/stitch_cluster/target/snitch_cluster/generated
