@@ -42,7 +42,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
   parameter type addr_t = logic [AddrWidth-1:0],
   parameter type data_t = logic [DataWidth-1:0],
   parameter int unsigned RegAddrWidth = TCDMMemAddrWidth+2,
-  parameter int unsigned RegPrefixWidth = TCDMMemAddrWidth+2-5,
+  parameter int unsigned RegPrefixWidth = RegAddrWidth-5,
   parameter type regaddr_t = logic [RegAddrWidth-1:0]
 ) (
   input  logic             clk_i,
@@ -103,17 +103,17 @@ module snitch_fp_ss import snitch_pkg::*; #(
   `FFLAR(ssr_active_q, Xssr & ssr_active_d, ssr_active_ena, 1'b0, clk_i, rst_i)
 
   function [RegAddrWidth-1:0] reg_addr;
-    input [4:0] reg_name;
     input [4:0][RegPrefixWidth-1:0] offsets;
+    input [4:0] reg_name;
     // 8 adjacent registers appear in the same bank
     begin
-      reg_addr = reg_addr_from_offset(offsets[reg_name[4:3]], reg_name);
+      reg_addr = reg_addr_from_offset(.offset(offsets[reg_name[4:3]]), .reg_name(reg_name));
     end
   endfunction
 
   function [RegAddrWidth-1:0] reg_addr_from_offset;
-    input [4:0] reg_name;
     input [RegPrefixWidth-1:0] offset;
+    input [4:0] reg_name;
     // 8 adjacent registers appear in the same bank
     begin
       reg_addr_from_offset = {offset, reg_name[2:0], reg_name[4:3]};
@@ -131,7 +131,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
   tag_t lsu_tag_in, lsu_tag_out;
 
   // scoreboard
-  logic [3:0][4:0] sb_tests;
+  regaddr_t [3:0] sb_tests;
   logic [3:0] sb_collision;
   logic sb_full;
 
@@ -177,7 +177,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
     logic [ScoreboardDepth-1:0] sb_pop_index;
   } wr_tag_t;
 
-  regaddr_t rs1, rs2, rs3; 
+  logic [4:0] rs1, rs2, rs3;
 
   // LSU
   typedef enum logic [1:0] {
@@ -188,6 +188,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
   } ls_size_e;
 
 
+  logic [2:0][4:0] fprs;
   regaddr_t [2:0] fpr_raddr;
   logic dst_ready;
 
@@ -289,12 +290,12 @@ module snitch_fp_ss import snitch_pkg::*; #(
   assign vfpr_tag_in.data_arga = acc_req_q.data_arga;
   assign vfpr_tag_in.data_argb = acc_req_q.data_argb;
   assign vfpr_tag_in.data_argc = acc_req_q.data_argc;
-  assign vfpr_tag_in.rd_offset = cfg_offset[vfpr_tag_in.rd[4:3]]; // TODO
+  assign vfpr_tag_in.rd_prefix = cfg_offset[vfpr_tag_in.rd[4:3]];
 
   assign vfpr_tag_in.rd = acc_req_q.data_op[11:7];
-  assign rs1 = reg_addr(.offsets(cfg_offset), .reg_name(acc_req_q.data_op[19:15]));
-  assign rs2 = reg_addr(.offsets(cfg_offset), .reg_name(acc_req_q.data_op[24:20]));
-  assign rs3 = reg_addr(.offsets(cfg_offset), .reg_name(acc_req_q.data_op[31:27]));
+  assign rs1 = acc_req_q.data_op[19:15];
+  assign rs2 = acc_req_q.data_op[24:20];
+  assign rs3 = acc_req_q.data_op[31:27];
 
   assign sb_tests[0] = fpr_raddr[0];
   assign sb_tests[1] = fpr_raddr[1];
@@ -304,13 +305,13 @@ module snitch_fp_ss import snitch_pkg::*; #(
 
   logic sb_push_valid;
   snitch_sb #(
-    .AddrWidth(5),
+    .AddrWidth(RegAddrWidth),
     .Depth(ScoreboardDepth),
     .NumTestAddrs(4)
   ) i_sb (
     .clk_i,
     .rst_i,
-    .push_rd_addr_i(vfpr_tag_in.rd),
+    .push_rd_addr_i(reg_addr(.offsets(cfg_offset), .reg_name(vfpr_tag_in.rd))),
     .push_valid_i(sb_push_valid),
     .entry_index_o(vfpr_tag_in.sb_pop_index),
     .pop_index_i(sb_pop_index),
@@ -2560,13 +2561,14 @@ module snitch_fp_ss import snitch_pkg::*; #(
   end
 
   logic [2:0][DataWidth-1:0] vfpr_rdata;
-  regaddr_t [2:0] reg_addrs;
+  logic [2:0][AddrWidth-1:0] reg_addrs;
   assign reg_addrs[0] = {fpr_raddr[0], 3'b0};
   assign reg_addrs[1] = {fpr_raddr[1], 3'b0};
   assign reg_addrs[2] = {fpr_raddr[2], 3'b0};
 
   snitch_vfpr #(
     .DataWidth(DataWidth),
+    .AddrWidth(AddrWidth),
     .TCDMMemAddrWidth(TCDMMemAddrWidth), 
     .tcdm_req_t(tcdm_req_t),
     .tcdm_rsp_t(tcdm_rsp_t),
@@ -2605,13 +2607,17 @@ module snitch_fp_ss import snitch_pkg::*; #(
 
   // Mux address lines as operands for the FPU can be mangled
   always_comb begin
-    fpr_raddr[0] = rs1;
-    fpr_raddr[1] = rs2;
-    fpr_raddr[2] = rs3;
+    fprs[0] = rs1;
+    fpr_raddr[0] = reg_addr(.offsets(cfg_offset), .reg_name(rs1));
+    fprs[1] = rs2;
+    fpr_raddr[1] = reg_addr(.offsets(cfg_offset), .reg_name(rs2));
+    fprs[2] = rs3;
+    fpr_raddr[2] = reg_addr(.offsets(cfg_offset), .reg_name(rs3));
 
     unique case (vfpr_tag_in.op_select[1])
       RegA: begin
-        fpr_raddr[1] = rs1;
+        fprs[1] = rs1;
+        fpr_raddr[1] = reg_addr(.offsets(cfg_offset), .reg_name(rs1));;
       end
       default:;
     endcase
@@ -2619,10 +2625,12 @@ module snitch_fp_ss import snitch_pkg::*; #(
     unique case (vfpr_tag_in.op_select[2])
       RegB,
       RegBRep: begin
-        fpr_raddr[2] = rs2;
+        fprs[2] = rs2;
+        fpr_raddr[2] = reg_addr(.offsets(cfg_offset), .reg_name(rs2));
       end
       RegDest: begin
-        fpr_raddr[2] = vfpr_tag_in.rd;
+        fprs[2] = vfpr_tag_in.rd;
+        fpr_raddr[2] = reg_addr(.offsets(cfg_offset), .reg_name(vfpr_tag_in.rd));
       end
       default:;
     endcase
@@ -2755,12 +2763,12 @@ module snitch_fp_ss import snitch_pkg::*; #(
   wr_tag_t wr_fpu, wr_lsu, wr_acc, wr_out;
 
   assign wr_fpu.data = fpu_result;
-  assign wr_fpu.addr = reg_addr_from_offset(fpu_tag_out.rd_prefix, fpu_tag_out.rd);
+  assign wr_fpu.addr = reg_addr_from_offset(.offset(fpu_tag_out.rd_prefix), .reg_name(fpu_tag_out.rd));
   assign wr_fpu.pop_sb = 1'b1;
   assign wr_fpu.sb_pop_index = fpu_tag_out.sb_pop_index;
 
   assign wr_lsu.data = ld_result;
-  assign wr_lsu.addr = reg_addr_from_offset(lsu_tag_out.rd_prefix, lsu_tag_out.rd);
+  assign wr_lsu.addr = reg_addr_from_offset(.offset(lsu_tag_out.rd_prefix), .reg_name(lsu_tag_out.rd));
   assign wr_lsu.pop_sb = 1'b1;
   assign wr_lsu.sb_pop_index = lsu_tag_out.sb_pop_index;
 

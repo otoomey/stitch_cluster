@@ -1,5 +1,6 @@
 module snitch_vfpr import snitch_pkg::*; #(
     parameter int unsigned DataWidth = 0,
+    parameter int unsigned AddrWidth = 0,
     parameter int unsigned TCDMMemAddrWidth = 0,
     parameter type tcdm_req_t = logic,
     parameter type tcdm_rsp_t = logic,
@@ -8,7 +9,6 @@ module snitch_vfpr import snitch_pkg::*; #(
     parameter type mem_rsp_t = logic,
     parameter type tag_t = logic,
     // derived parameters
-    parameter int unsigned AddrWidth = TCDMMemAddrWidth + 2,
     parameter type addr_t = logic [AddrWidth-1:0],
     parameter type data_t = logic [DataWidth-1:0]
 ) (
@@ -185,11 +185,6 @@ module snitch_vfpr import snitch_pkg::*; #(
         .oup_valid_o(rvalid_o),
         .oup_ready_i(rready_i)
     );
-
-    initial begin
-        $display("vfpr mem addr width %d, data width %d", TCDMMemAddrWidth, DataWidth);
-        $display("mem req addr width: %d", $bits(mem_req_o[0].q.addr));
-    end
 
     // always @(posedge clk_i) begin
     //     // if a transactions is happening
