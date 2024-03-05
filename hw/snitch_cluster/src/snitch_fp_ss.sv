@@ -2862,7 +2862,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
   // Tracer
   // pragma translate_off
   assign trace_port_o.source       = snitch_pkg::SrcFpu;
-  assign trace_port_o.acc_q_hs     = (acc_req_valid_q  && acc_req_ready_q );
+  assign trace_port_o.acc_q_hs     = (vfpr_out_valid  && vfpr_out_ready );
   assign trace_port_o.fpu_out_hs   = (fpu_out_valid && fpu_out_ready );
   assign trace_port_o.lsu_q_hs     = (lsu_in_valid    && lsu_in_ready    );
   assign trace_port_o.op_in        = acc_req_q.data_op;
@@ -2884,7 +2884,7 @@ module snitch_fp_ss import snitch_pkg::*; #(
   assign trace_port_o.op_2         = op[2];
   assign trace_port_o.use_fpu      = vfpr_tag_out.is_fpu;
   assign trace_port_o.fpu_in_rd    = fpu_tag_in.rd;
-  assign trace_port_o.fpu_in_acc   = vfpr_tag_in.rd_is_acc;
+  assign trace_port_o.fpu_in_acc   = fpu_tag_in.acc;
   assign trace_port_o.ls_size      = vfpr_tag_out.ls_size;
   assign trace_port_o.is_load      = vfpr_tag_out.is_load;
   assign trace_port_o.is_store     = vfpr_tag_out.is_store;
