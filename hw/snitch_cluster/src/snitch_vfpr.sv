@@ -2,6 +2,7 @@ module snitch_vfpr import snitch_pkg::*; #(
     parameter int unsigned DataWidth = 0,
     parameter int unsigned AddrWidth = 0,
     parameter int unsigned TCDMMemAddrWidth = 0,
+    parameter int unsigned RspBufferDepth = 3,
     parameter type tcdm_req_t = logic,
     parameter type tcdm_rsp_t = logic,
     parameter type tcdm_user_t = logic,
@@ -63,6 +64,16 @@ module snitch_vfpr import snitch_pkg::*; #(
     );
 
     for (genvar i = 0; i < 3; i++) begin
+        logic cong_out_valid, cong_out_ready;
+        logic [1:0] rsp_congestion;
+        stream_stall i_full_stall (
+            .valid_i(rvalid_fork[i]),
+            .ready_o(rready_fork[i]),
+            .stall(rsp_congestion == (RspBufferDepth - 1)),
+            .valid_o(cong_out_valid),
+            .ready_i(cong_out_ready)
+        );
+
         logic ic_in_valid, ic_in_ready;
         logic track_in_valid, track_in_ready;
         
@@ -71,8 +82,8 @@ module snitch_vfpr import snitch_pkg::*; #(
         ) i_tcdm_bypass (
             .clk_i,
             .rst_ni(~rst_i),
-            .valid_i(rvalid_fork[i]),
-            .ready_o(rready_fork[i]),
+            .valid_i(cong_out_valid),
+            .ready_o(cong_out_ready),
             .valid_o({ic_in_valid, track_in_valid}),
             .ready_i({ic_in_ready, track_in_ready})
         );
@@ -113,21 +124,23 @@ module snitch_vfpr import snitch_pkg::*; #(
         // buffer the interconnect output - necessary because
         // the ic expects output to be always ready
         logic ic_out_valid, ic_out_ready;
-        fall_through_register #(
-            .T(data_t)
+        stream_fifo #(
+            .FALL_THROUGH ( 1'b0                ),
+            .DEPTH        ( RspBufferDepth      ),
+            .T            ( data_t              )
         ) i_rsp_buffer (
             .clk_i,
-            .rst_ni(~rst_i),
-            .clr_i('0),
-            .testmode_i('0),
-            .valid_i(vfpr_rsp[i].p_valid),
-            .ready_o(/* unused */),
-            .data_i(vfpr_rsp[i].p.data),
-            .valid_o(ic_out_valid),
-            .ready_i(ic_out_ready),
-            .data_o(rdata_o[i])
+            .rst_ni (~rst_i),
+            .flush_i (1'b0),
+            .testmode_i(1'b0),
+            .usage_o (rsp_congestion),
+            .data_i (vfpr_rsp[i].p.data),
+            .valid_i (vfpr_rsp[i].p_valid),
+            .ready_o (/* open */),
+            .data_o (rdata_o[i]),
+            .valid_o (ic_out_valid),
+            .ready_i (ic_out_ready)
         );
-
 
         stream_merge #(
             .N_INP(2)
