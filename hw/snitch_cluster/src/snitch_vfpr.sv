@@ -64,15 +64,6 @@ module snitch_vfpr import snitch_pkg::*; #(
     );
 
     for (genvar i = 0; i < 3; i++) begin
-        logic cong_out_valid, cong_out_ready;
-        logic [1:0] rsp_congestion;
-        stream_stall i_full_stall (
-            .valid_i(rvalid_fork[i]),
-            .ready_o(rready_fork[i]),
-            .stall(rsp_congestion == (RspBufferDepth - 1)),
-            .valid_o(cong_out_valid),
-            .ready_i(cong_out_ready)
-        );
 
         logic ic_in_valid, ic_in_ready;
         logic track_in_valid, track_in_ready;
@@ -82,8 +73,8 @@ module snitch_vfpr import snitch_pkg::*; #(
         ) i_tcdm_bypass (
             .clk_i,
             .rst_ni(~rst_i),
-            .valid_i(cong_out_valid),
-            .ready_o(cong_out_ready),
+            .valid_i(rvalid_fork[i]),
+            .ready_o(rready_fork[i]),
             .valid_o({ic_in_valid, track_in_valid}),
             .ready_i({ic_in_ready, track_in_ready})
         );
@@ -112,20 +103,30 @@ module snitch_vfpr import snitch_pkg::*; #(
             .ready_i(ic_in_en_ready)
         );
 
+        logic cong_out_valid, cong_out_ready;
+        logic [1:0] rsp_congestion;
+        stream_stall i_full_stall (
+            .valid_i(ic_in_en_valid),
+            .ready_o(ic_in_en_ready),
+            .stall(rsp_congestion >= (RspBufferDepth - 1)),
+            .valid_o(cong_out_valid),
+            .ready_i(cong_out_ready)
+        );
+
         assign vfpr_req[i].q.addr = raddr_i[i];
         assign vfpr_req[i].q.write = '0;
         assign vfpr_req[i].q.amo = reqrsp_pkg::AMONone;
         assign vfpr_req[i].q.data = '0;
         assign vfpr_req[i].q.strb = '1;
         assign vfpr_req[i].q.user = '0;
-        assign vfpr_req[i].q_valid = ic_in_en_valid;
-        assign ic_in_en_ready = vfpr_rsp[i].q_ready;
+        assign vfpr_req[i].q_valid = cong_out_valid;
+        assign cong_out_ready = vfpr_rsp[i].q_ready;
 
         // buffer the interconnect output - necessary because
         // the ic expects output to be always ready
         logic ic_out_valid, ic_out_ready;
         stream_fifo #(
-            .FALL_THROUGH ( 1'b0                ),
+            .FALL_THROUGH ( 1'b1                ),
             .DEPTH        ( RspBufferDepth      ),
             .T            ( data_t              )
         ) i_rsp_buffer (

@@ -15,8 +15,9 @@ void axpy(uint32_t l, double a, double *x, double *y, double *z) {
     //         : "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23"
     // );
     asm volatile(
-                "frep.o %[n_frep], %[unroll], 0, 0 \n"
-                "fmadd.d f16, f0, %[acc], f8 \n"
+                "fmv.d f24, %[acc] \n"
+                "frep.o %[n_frep], %[unroll], 7, 0b1011 \n"
+                "fmadd.d f16, f0, f24, f8 \n"
                 : [ acc ] "+f"(a)
                 : [ n_frep ] "r"(31), [ unroll ] "i"(1)
                 : "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23");
